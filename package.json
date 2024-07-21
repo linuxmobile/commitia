@@ -1,0 +1,18 @@
+{
+  "name": "commitgenz",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "^1.1.6"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^0.0.37",
+    "@clack/prompts": "^0.7.0",
+    "@dotenvx/dotenvx": "^1.6.4",
+    "ai": "^3.2.32",
+    "picocolors": "^1.0.1"
+  }
+}
