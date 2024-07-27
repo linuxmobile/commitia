@@ -1,0 +1,20 @@
+{
+  "welcome_message": "Bienvenido/a a Commitia",
+  "select_commit_files": "Seleccionar archivos para commitear",
+  "operation_canceled": "Operación cancelada",
+  "content_log_generated": "Registro de contenido generado",
+  "ask_select_files": "¿Quieres seleccionar archivos manualmente?",
+  "selecting_files": "Seleccionar archivos",
+  "content_files": "Archivos de los archivos",
+  "error_verifyng_launchfile": "Error al verificar o crear el archivo firstLaunch",
+  "ask_continue": "¿Quieres continuar?",
+  "goodbye": "¡Hasta luego!  👋",
+  "commit_configured": "Commitia ha sido configurado",
+  "ask_use_token": "¿Quieres utilizar tu propio token API de groq?",
+  "paste_token": "Por favor obtenga su TOKEN aquí:",
+  "use_valid_token": "debes ingresar un TOKEN válido",
+  "invalid_token": "No se encontró ningún TOKEN API de Groq válido",
+  "invalid_directory": "Error al obtener el directorio actual",
+  "error_reading_file": "Error al leer el archivo",
+  "default_prompt": "Genera un mensaje de commit que sea un resumen claro y conciso de los cambios realizados en los archivos seleccionados, sin agregar texto adicional."
+}
