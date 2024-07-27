@@ -16,5 +16,5 @@
   "invalid_token": "No se encontró ningún TOKEN API de Groq válido",
   "invalid_directory": "Error al obtener el directorio actual",
   "error_reading_file": "Error al leer el archivo",
-  "default_prompt": "Genera un mensaje de commit que sea un resumen claro y conciso de los cambios realizados en los archivos seleccionados, sin agregar texto adicional."
+  "default_prompt": "Genera un mensaje de commit que sea un resumen claro y conciso de los cambios realizados en el archivo seleccionado, sin agregar texto adicional. Los cambios los devuelvo en un json, por tanto dentro tenés las constantes y funciones, imagina el commit y devuélvelo."
 }
