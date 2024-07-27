@@ -16,5 +16,5 @@
   "invalid_token": "No valid Groq API TOKEN found",
   "invalid_directory": "Error getting current directory",
   "error_reading_file": "Error reading file",
-  "default_prompt": "Generates a commit message that is a clear and concise summary of the changes made to the selected file, without adding additional text. I return the changes in a json, so inside you have the constants and functions, imagine the commit and return it"
+  "default_prompt": "Act as the author of a Git commit message. Your task is to create a clean and comprehensible commit message. I will provide you with the context of 'git diff --staged' in JSON format. This JSON will include the file name, modified functions, and constants. Generate a commit message that describes what changes were made and where, using the present tense. The message must not exceed 74 characters and should not include any additional text. Return only the commit message. Here is the JSON:"
 }
