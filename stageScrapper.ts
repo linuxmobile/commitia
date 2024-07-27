@@ -1,5 +1,5 @@
 import { $ } from "bun";
-import { RULES } from "./utils/PROMPT_CONTEXT_RULES";
+import { RULES } from "./utils/PROMPT_CONTEXT_RULES.ts";
 
 let globalFilesContent = "";
 

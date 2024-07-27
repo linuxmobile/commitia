@@ -5,8 +5,7 @@ import { DATA } from "./utils/KEY";
 import { outro, confirm, isCancel, cancel, multiselect } from "@clack/prompts";
 import { updateGlobalFilesContent } from "./stageScrapper";
 import { readFirstLaunchFile } from "./components/readFirstLaunchFile";
-import { fileOptions, addStagedFiles, resetStagedFiles, getFileContent } from "~/components/gitStageManager";
-import { get } from "@dotenvx/dotenvx";
+import { fileOptions, addStagedFiles, resetStagedFiles, getDiffSummary, getRuleResultsForFiles } from "~/components/gitStageManager";
 
 const selectedFilesOptions = fileOptions;
 
@@ -50,8 +49,8 @@ async function main() {
 	}
 
 	const stagedFiles = await addStagedFiles(selectedFiles);
-	const fileContent = await getFileContent(stagedFiles);
-	console.log("Contenido de los archivos:", fileContent);
+	const ruleResults = await getRuleResultsForFiles(stagedFiles);
+	console.log("Resultados de las reglas:", ruleResults);
 
 }
 
