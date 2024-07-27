@@ -52,6 +52,7 @@ function parseDiff(diff: string, fileName: string) {
     }
   }
 
+  console.log("COMMILLAS DOBLES?", added)
   return {
     file: currentFile || fileName,
     added
