@@ -1,11 +1,14 @@
 #!/usr/bin/env bun
 
 import { firstLaunch, i18xs } from "./FIRST_LAUNCH";
-import { DATA } from "./utils/KEY";
-import { outro, confirm, isCancel, cancel, multiselect } from "@clack/prompts";
-import { readFirstLaunchFile } from "./components/readFirstLaunchFile";
-import { fileOptions, addStagedFiles, resetStagedFiles, getDiffSummary } from "~/components/gitStageManager";
+import { setTimeout as sleep } from 'node:timers/promises';
+import { DATA } from "~/utils/KEY";
+import { outro, confirm, isCancel, cancel, multiselect, note, spinner } from "@clack/prompts";
+import { readFirstLaunchFile } from "~/components/readFirstLaunchFile";
+import { fileOptions, addStagedFiles, resetStagedFiles, getDiffSummary, commitStagedFiles } from "~/components/gitStageManager";
+import { generatePrompt, commitMessage, cleanCommitMessage } from "~/utils/PROMPT_GENERATOR";
 
+const s = spinner()
 const selectedFilesOptions = fileOptions;
 
 async function main() {
@@ -49,8 +52,37 @@ async function main() {
 
 	const stagedFiles = await addStagedFiles(selectedFiles);
 
-	const { added, totalTokenCount } = await getDiffSummary(stagedFiles);
-	console.log("Resumen de cambios:", { added, totalTokenCount });
+	const { added } = await getDiffSummary(stagedFiles);
+
+	s.start('Generating commit message...');
+
+	try {
+		await generatePrompt(DATA, added);
+		s.stop('Prompt generated successfully!');
+		note(`"${cleanCommitMessage}"`)
+	} catch (error) {
+		s.stop('Failed to generate prompt.');
+		console.error('Error generating prompt:', error);
+		cancel(`${i18xs.t('common.operation_canceled')}`);
+		await resetStagedFiles(selectedFiles);
+		return process.exit(0);
+	}
+
+	const confirmCommit = await confirm({
+		message: "¿Quieres hacer el commit?",
+		default: true,
+	});
+
+	if (isCancel(confirmCommit) || !confirmCommit) {
+		cancel(`${i18xs.t('common.operation_canceled')}`);
+		await resetStagedFiles(selectedFiles);
+		return process.exit(0);
+	}
+
+	outro("The commit was deployed!");
+	await commitStagedFiles(cleanCommitMessage);
+	await sleep(1000);
+
 }
 
 async function checkAndRun() {

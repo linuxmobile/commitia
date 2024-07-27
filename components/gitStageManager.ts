@@ -52,7 +52,6 @@ function parseDiff(diff: string, fileName: string) {
     }
   }
 
-  console.log("COMMILLAS DOBLES?", added)
   return {
     file: currentFile || fileName,
     added
@@ -72,6 +71,10 @@ async function getDiffSummary(files: string[]): Promise<{ added: string[], total
   };
 }
 
+async function commitStagedFiles(commitMessage: string) {
+  await git.commit(commitMessage);
+}
+
 const fileOptions = await getFileOptions();
 
-export { fileOptions, addStagedFiles, resetStagedFiles, getDiffSummary, totalTokenCount };
+export { fileOptions, addStagedFiles, resetStagedFiles, getDiffSummary, totalTokenCount, commitStagedFiles };

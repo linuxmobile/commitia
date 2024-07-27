@@ -4,8 +4,10 @@ import { i18xs } from "../FIRST_LAUNCH";
 import { readFirstLaunchFile } from "~/components/readFirstLaunchFile";
 
 const DEFAULT_PROMPT: string = `${i18xs.t('common.default_prompt')}`;
+let commitMessage: string = '';
+let cleanCommitMessage: string = '';
 
-async function generatePrompt(DATA: string, context: string): Promise<string> {
+async function generatePrompt(DATA: string, context: string[]): Promise<string> {
   const firstLaunchData = await readFirstLaunchFile();
 
   if (firstLaunchData) {
@@ -21,11 +23,27 @@ async function generatePrompt(DATA: string, context: string): Promise<string> {
     apiKey: DATA,
   });
 
-  const { text } = await generateText({
-    model: groq("llama-3.1-70b-versatile"),
-    prompt: `${DEFAULT_PROMPT} ${context}`,
-    maxTokens: 250,
-  });
+  try {
+    const { text } = await generateText({
+      model: groq("llama-3.1-70b-versatile"),
+      prompt: `${DEFAULT_PROMPT} ${context}`,
+      maxTokens: 250,
+    });
 
-  return text;
+    commitMessage = text;
+
+    const match = text.match(/"([^"]+)"/);
+    if (match && match[1]) {
+      cleanCommitMessage = match[1];
+    } else {
+      cleanCommitMessage = text;
+    }
+
+    return cleanCommitMessage;
+  } catch (error) {
+    console.error('Error generating text:', error);
+    throw error;
+  }
 }
+
+export { generatePrompt, commitMessage, cleanCommitMessage };
