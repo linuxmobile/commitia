@@ -2,17 +2,11 @@
 
 import { firstLaunch, i18xs } from "./FIRST_LAUNCH";
 import { DATA } from "./utils/KEY";
-import { $ } from "bun";
 import { outro, confirm, isCancel, cancel, multiselect } from "@clack/prompts";
 import { updateGlobalFilesContent } from "./stageScrapper";
 import { readFirstLaunchFile } from "./components/readFirstLaunchFile";
-
-const gitStatusOutputText = await $`git status --porcelain | awk '{print substr($0, 4)}'`.text();
-const files = gitStatusOutputText.trim().split('\n');
-
-const fileOptions = files.map(file => {
-	return { value: file, label: file };
-});
+import { fileOptions, addStagedFiles, resetStagedFiles, getFileContent } from "~/components/gitStageManager";
+import { get } from "@dotenvx/dotenvx";
 
 const selectedFilesOptions = fileOptions;
 
@@ -41,7 +35,6 @@ async function main() {
 
 	let selectedFiles;
 	if (!askGitCommitStatus) {
-		console.log(files);
 		selectedFiles = files;
 	} else {
 		selectedFiles = await multiselect({
@@ -52,11 +45,14 @@ async function main() {
 
 	if (isCancel(selectedFiles)) {
 		cancel(`${i18xs.t('common.operation_canceled')}`);
+		await resetStagedFiles(selectedFiles);
 		return process.exit(0);
 	}
 
-	const getFileContent = await updateGlobalFilesContent(selectedFiles);
-	console.log(`${i18xs.t('common.content_files')}`, getFileContent);
+	const stagedFiles = await addStagedFiles(selectedFiles);
+	const fileContent = await getFileContent(stagedFiles);
+	console.log("Contenido de los archivos:", fileContent);
+
 }
 
 async function checkAndRun() {
