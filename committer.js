@@ -3,9 +3,8 @@
 import { firstLaunch, i18xs } from "./FIRST_LAUNCH";
 import { DATA } from "./utils/KEY";
 import { outro, confirm, isCancel, cancel, multiselect } from "@clack/prompts";
-import { updateGlobalFilesContent } from "./stageScrapper";
 import { readFirstLaunchFile } from "./components/readFirstLaunchFile";
-import { fileOptions, addStagedFiles, resetStagedFiles, getDiffSummary, getRuleResultsForFiles } from "~/components/gitStageManager";
+import { fileOptions, addStagedFiles, resetStagedFiles, getDiffSummary } from "~/components/gitStageManager";
 
 const selectedFilesOptions = fileOptions;
 
@@ -49,11 +48,9 @@ async function main() {
 	}
 
 	const stagedFiles = await addStagedFiles(selectedFiles);
-	const ruleResults = await getRuleResultsForFiles(stagedFiles);
-	console.log("Resultados de las reglas:", ruleResults);
 
-	const diffSummary = await getDiffSummary(stagedFiles);
-	console.log("Resumen de cambios:", diffSummary);
+	const { added, totalTokenCount } = await getDiffSummary(stagedFiles);
+	console.log("Resumen de cambios:", { added, totalTokenCount });
 }
 
 async function checkAndRun() {
