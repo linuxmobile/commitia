@@ -11,6 +11,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^0.0.37",
     "@clack/prompts": "^0.7.0",
+    "@dqbd/tiktoken": "^1.0.15",
     "ai": "^3.2.32",
     "i18xs": "^1.4.2",
     "open": "^10.1.0",
