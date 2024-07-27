@@ -5,7 +5,7 @@ import { DATA } from "./utils/KEY";
 import { $ } from "bun";
 import { outro, confirm, isCancel, cancel, multiselect } from "@clack/prompts";
 import { updateGlobalFilesContent } from "./stageScrapper";
-import { readFirstLaunchFile } from "./utils/readFirstLaunchFile";
+import { readFirstLaunchFile } from "./components/readFirstLaunchFile";
 
 const gitStatusOutputText = await $`git status --porcelain | awk '{print substr($0, 4)}'`.text();
 const files = gitStatusOutputText.trim().split('\n');

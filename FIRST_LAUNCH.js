@@ -4,7 +4,7 @@ import open from "open";
 import { intro, confirm, isCancel, cancel, note, password, select } from "@clack/prompts";
 import pc from "picocolors";
 import I18XS from 'i18xs'
-import { DATA, setData } from "./utils/KEY";
+import { DATA, setData } from "~/utils/KEY";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
