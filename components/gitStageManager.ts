@@ -17,52 +17,53 @@ async function getFileOptions() {
 }
 
 async function addStagedFiles(stagedFiles: string[]) {
-  console.log("Agregando archivos seleccionados:", stagedFiles);
   for (const file of stagedFiles) {
-    try {
-      console.log(`Agregando archivo: ${file}`);
-      await git.add(file);
-      console.log(`Archivo agregado: ${file}`);
-    } catch (error) {
-      console.error(`Error al agregar el archivo ${file}:`, error);
-      throw error;
-    }
+    await git.add(file);
   }
-
-  try {
-    const status = await git.status();
-    console.log("Estado de git después de agregar archivos:", status);
-    return stagedFiles;
-  } catch (error) {
-    console.error("Error al obtener el estado de git:", error);
-    throw error;
-  }
+  return stagedFiles;
 }
 
 async function resetStagedFiles(files: string[]) {
-  console.log("Reseteando archivos seleccionados:", files);
   for (const file of files) {
-    try {
-      await git.reset(['--', file]);
-      console.log(`Archivo reseteado: ${file}`);
-    } catch (error) {
-      console.error(`Error al resetear el archivo ${file}:`, error);
-      throw error;
-    }
+    await git.reset(['--', file]);
   }
 }
 
-async function getDiffSummary(files: string[]): Promise<string> {
-  console.log("Obteniendo cambios de git diff para los archivos seleccionados:", files);
-  try {
-    const diffCommand = ['--cached', '--', ...files];
-    const diff = await git.diff(diffCommand);
-    console.log("Contenido del diff obtenido:", diff); // Agregar log para verificar el contenido del diff
-    return diff;
-  } catch (error) {
-    console.error("Error al obtener los cambios de git diff:", error);
-    throw error;
+function parseDiff(diff: string, fileName: string) {
+  const lines = diff.split('\n');
+  let added: string[] = [];
+  let removed: string[] = [];
+  let currentFile = '';
+
+  for (const line of lines) {
+    if (line.startsWith('+++ b/')) {
+      currentFile = line.replace('+++ b/', '');
+    } else if (line.startsWith('+') && !line.startsWith('+++')) {
+      added.push(line.substring(1).replace(/\\t/g, ' ').replace(/\\/g, '').trim());
+    } else if (line.startsWith('-') && !line.startsWith('---')) {
+      removed.push(line.substring(1).replace(/\\t/g, ' ').replace(/\\/g, '').trim());
+    }
   }
+
+  return {
+    file: currentFile || fileName,
+    added,
+    removed
+  };
+}
+
+function formatJSONWithoutEscapes(obj: any): string {
+  return JSON.stringify(obj, null, 2)
+    .replace(/\\"/g, '"')
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t');
+}
+
+async function getDiffSummary(files: string[]): Promise<string> {
+  const diffCommand = ['--cached', '--', ...files];
+  const diff = await git.diff(diffCommand);
+  const parsedDiff = parseDiff(diff, files[0]);
+  return formatJSONWithoutEscapes({ parsed: parsedDiff });
 }
 
 async function applyRulesBasedOnExtension(file: string, diff: string): Promise<any> {
@@ -93,10 +94,11 @@ async function getRuleResultsForFiles(files: string[]): Promise<string[]> {
   for (const file of files) {
     const diff = await getDiffSummary([file]);
     const result = await applyRulesBasedOnExtension(file, diff);
-    results.push(JSON.stringify(result, null, 2))
+    const formattedResult = JSON.stringify(result, null, 2);
+    results.push(formattedResult);
   }
 
-  return results;
+  return results.map(result => JSON.parse(result));
 }
 
 const fileOptions = await getFileOptions();

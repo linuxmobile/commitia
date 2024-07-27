@@ -52,6 +52,8 @@ async function main() {
 	const ruleResults = await getRuleResultsForFiles(stagedFiles);
 	console.log("Resultados de las reglas:", ruleResults);
 
+	const diffSummary = await getDiffSummary(stagedFiles);
+	console.log("Resumen de cambios:", diffSummary);
 }
 
 async function checkAndRun() {
