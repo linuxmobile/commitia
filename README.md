@@ -1,4 +1,6 @@
-# commitgenz
+<img src="https://i.ibb.co/X7LR5J7/banner2.png">
+
+# Commitia
 
 To install dependencies:
 
