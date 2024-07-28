@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { firstLaunch, i18xs } from "./FIRST_LAUNCH";
+import { firstLaunch, i18xs } from "~/utils/FIRST_LAUNCH";
 import { setTimeout as sleep } from 'node:timers/promises';
 import { DATA } from "~/utils/KEY";
 import { outro, confirm, isCancel, cancel, multiselect, note, spinner } from "@clack/prompts";

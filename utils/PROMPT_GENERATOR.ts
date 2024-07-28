@@ -1,6 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateText } from "ai";
-import { i18xs } from "../FIRST_LAUNCH";
+import { i18xs } from "~/utils/FIRST_LAUNCH";
 import { readFirstLaunchFile } from "~/components/readFirstLaunchFile";
 
 const DEFAULT_PROMPT: string = `${i18xs.t('common.default_prompt')}`;

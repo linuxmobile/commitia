@@ -20,9 +20,6 @@ async function readFileContent(fullPath: string): Promise<string | null> {
     let extractFunction: (context: string) => Promise<{ functions?: string[], constants?: string[], keys?: string[] }>;
 
     switch (extension) {
-      case 'ts':
-        extractFunction = RULES.TYPESCRIPT;
-        break;
       case 'js':
         extractFunction = RULES.JAVASCRIPT;
         break;
