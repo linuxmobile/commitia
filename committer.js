@@ -6,7 +6,7 @@ import { DATA } from "~/utils/KEY";
 import { outro, confirm, isCancel, cancel, multiselect, note, spinner } from "@clack/prompts";
 import { readFirstLaunchFile } from "~/components/readFirstLaunchFile";
 import { fileOptions, addStagedFiles, resetStagedFiles, getDiffSummary, commitStagedFiles } from "~/components/gitStageManager";
-import { generatePrompt, commitMessage, cleanCommitMessage } from "~/utils/PROMPT_GENERATOR";
+import { generatePrompt, cleanCommitMessage } from "~/utils/PROMPT_GENERATOR";
 
 const s = spinner()
 const selectedFilesOptions = fileOptions;
