@@ -1,21 +1,34 @@
 {
-  "name": "commitgenz",
-  "module": "index.ts",
-  "type": "module",
-  "devDependencies": {
-    "@types/bun": "^1.1.6"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  },
-  "dependencies": {
-    "@ai-sdk/openai": "^0.0.37",
-    "@clack/prompts": "^0.7.0",
-    "ai": "^3.2.32",
-    "gpt-tokenizer": "^2.2.1",
-    "i18xs": "^1.4.2",
-    "open": "^10.1.0",
-    "picocolors": "^1.0.1",
-    "simple-git": "^3.25.0"
-  }
+	"name": "commitia",
+	"version": "0.1.0",
+	"description": "A simple CLI tool to help you write better commit messages.",
+	"author": {
+		"name": "linuxmobile",
+		"email": "bdiez19@gmail.com"
+	},
+	"homepage": "https://comittia.vercel.app/",
+	"keywords": ["commit", "message", "cli", "tool"],
+	"license": "MIT",
+	"exports": {
+		"./dist/": "./commitia"
+	},
+	"bin": "./commitia",
+	"module": "commitia.ts",
+	"type": "module",
+	"devDependencies": {
+		"@types/bun": "^1.1.6"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	},
+	"dependencies": {
+		"@ai-sdk/openai": "^0.0.37",
+		"@clack/prompts": "^0.7.0",
+		"ai": "^3.2.32",
+		"gpt-tokenizer": "^2.2.1",
+		"i18xs": "^1.4.2",
+		"open": "^10.1.0",
+		"picocolors": "^1.0.1",
+		"simple-git": "^3.25.0"
+	}
 }
