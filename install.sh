@@ -6,6 +6,11 @@ then
     exit 1
 fi
 
+if command -v bun &> /dev/null
+then
+    bun install
+fi
+
 if bun build commitia.js --outdir=dist/ --format=esm --external=i18xs --external=picocolors --sourcemap; then
     cp -rf dist/commitia.js ~/.local/share/bin/commitia
     cp -rf locales/ ~/.local/share/bin/
