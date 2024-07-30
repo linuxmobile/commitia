@@ -1,6 +1,6 @@
 type TKNMType = string;
 
-export const T: TKNMType = "Pq8qRzeCJnQkiowyRv3vk/ed0VQcSW+yFm8nPToeHqI=";
-export const K: TKNMType = "3DDGs926PNH8LjhqeBz+ggxJDunotacjYGgsmf/Un9Y=";
-export const N: TKNMType = "zMFRkd15zjqxjkezPZ5qa1QxLhZ8hTXW6jPKEKHWvDo=";
-export const M: TKNMType = "Wl8x+7yLioA2tvCnwzeJfB7i0AWYsP7m";
+export const T = "QqUnbFkkWBxQOV/retPN3E6v1ZXfRWuiwT0jyCTcAOw=";
+export const K = "uDEGfp5J+PnegQ8H9F3vbPGctNJbO8XR0FNp/Y3Ea3g=";
+export const N = "VemJBbC8YwN0yzmo1tAcwwnmYDlC8Cg=";
+export const M = "oi5a2F9SBAtglArV98hGhQ==";

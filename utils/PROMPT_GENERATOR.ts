@@ -1,8 +1,8 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { z } from "zod";
 import { generateObject } from "ai";
 import { i18xs } from "~/utils/FIRST_LAUNCH";
 import { readFirstLaunchFile } from "~/components/readFirstLaunchFile";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 const DEFAULT_PROMPT: string = `${i18xs.t("common.default_prompt")}`;
 let commitMessage: string = "";
@@ -21,30 +21,34 @@ async function generatePrompt(
 		}
 	}
 
-	const groq = createOpenAI({
-		baseURL: "https://api.groq.com/openai/v1",
+	const google = createGoogleGenerativeAI({
 		apiKey: DATA,
 	});
 
 	try {
 		const { object } = await generateObject({
-			model: groq("llama-3.1-70b-versatile"),
+			model: google("models/gemini-1.5-pro-latest"),
 			schema: z.object({
 				commit: z
 					.object({
 						convention: z
 							.string()
-							.describe("Commit convention: feat, fix, etc."),
+							.describe(
+								"Commit convention: feat, fix, chore, refactor, docs, style, test, etc.",
+							),
 						message: z
 							.string()
-							.describe("Commit body message. Description of the changes"),
+							.describe(
+								"Commit body message. Description of comprehensible changes, without convention.",
+							),
 					})
 					.describe(
 						"Commit message for the staged changes. Max characters: 74",
 					),
 			}),
+			mode: "json",
 			prompt: `${DEFAULT_PROMPT} ${context}`,
-			maxTokens: 30,
+			maxTokens: 40,
 			temperature: 0,
 		});
 

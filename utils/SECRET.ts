@@ -1,1 +1,1 @@
-export const secretKey: string = "+7SWKLF3vmm7O7UzFnZBUXILHs9vH6Yc5lkZwyf1kHw=";
+export const secretKey: string = "07sWDSBEJib0rLNpfE0oiqEXVg/MSoUTETFe7bygXiE=";
