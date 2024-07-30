@@ -24,7 +24,7 @@ import {
 } from "~/components/readFirstLaunchFile";
 import { firstLaunch, i18xs } from "~/utils/FIRST_LAUNCH";
 import { DATA } from "~/utils/KEY";
-import { cleanCommitMessage, generatePrompt } from "~/utils/PROMPT_GENERATOR";
+import { generatePrompt, commitMessage } from "~/utils/PROMPT_GENERATOR";
 
 const s = spinner();
 const selectedFilesOptions = fileOptions;
@@ -43,8 +43,8 @@ async function main() {
 	const isGitRepo = await checkIfGitRepo();
 
 	if (!isGitRepo) {
-		note("Not in a Git repository. Exiting...");
-		outro("Goodbye! 👋");
+		note(`${i18xs.t("common.is_git_repo")}`);
+		outro(`${i18xs.t("common.goodbye")}`);
 		return process.exit(0);
 	}
 
@@ -80,22 +80,22 @@ async function main() {
 
 	const { added } = await getDiffSummary(stagedFiles);
 
-	s.start("Generating commit message...");
+	s.start(`${i18xs.t("common.generating_commit")}`);
 
 	try {
 		await generatePrompt(DATA, added);
-		s.stop("Prompt generated successfully!");
-		note(`"${cleanCommitMessage}"`);
+		s.stop(`${i18xs.t("common.prompt_generated")}`);
+		note(`"${commitMessage}"`);
 	} catch (error) {
-		s.stop("Failed to generate prompt.");
-		console.error("Error generating prompt:", error);
+		s.stop(`${i18xs.t("common.prompt_failed")}`);
+		console.error(`${i18xs.t("common.prompt_error")}`, error);
 		cancel(`${i18xs.t("common.operation_canceled")}`);
 		await resetStagedFiles(selectedFiles);
 		return process.exit(0);
 	}
 
 	const confirmCommit = await confirm({
-		message: "¿Quieres hacer el commit?",
+		message: `${i18xs.t("common.ask_do_commit")}`,
 		default: true,
 	});
 
@@ -105,8 +105,8 @@ async function main() {
 		return process.exit(0);
 	}
 
-	outro("The commit was deployed!");
-	await commitStagedFiles(cleanCommitMessage);
+	outro(`${i18xs.t("common.commit_deployed")}`);
+	await commitStagedFiles(commitMessage);
 	await sleep(1000);
 }
 
