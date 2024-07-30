@@ -11,13 +11,17 @@ import {
 } from "@clack/prompts";
 import { setTimeout as sleep } from "node:timers/promises";
 import {
+	checkIfGitRepo,
 	addStagedFiles,
 	commitStagedFiles,
 	fileOptions,
 	getDiffSummary,
 	resetStagedFiles,
 } from "~/components/gitStageManager";
-import { readFirstLaunchFile } from "~/components/readFirstLaunchFile";
+import {
+	readFirstLaunchFile,
+	firstLaunchFile,
+} from "~/components/readFirstLaunchFile";
 import { firstLaunch, i18xs } from "~/utils/FIRST_LAUNCH";
 import { DATA } from "~/utils/KEY";
 import { cleanCommitMessage, generatePrompt } from "~/utils/PROMPT_GENERATOR";
@@ -26,14 +30,6 @@ const s = spinner();
 const selectedFilesOptions = fileOptions;
 
 async function main() {
-	const isGitRepo = await checkGitRepo();
-
-	if (!isGitRepo) {
-		note("Not in a Git repository. Exiting...");
-		outro("Goodbye! 👋");
-		return process.exit(0);
-	}
-
 	const firstLaunchData = await readFirstLaunchFile();
 
 	if (firstLaunchData) {
@@ -42,6 +38,14 @@ async function main() {
 		} else if (firstLaunchData.lang === "en") {
 			i18xs.changeCurrentLocale("en");
 		}
+	}
+
+	const isGitRepo = await checkIfGitRepo();
+
+	if (!isGitRepo) {
+		note("Not in a Git repository. Exiting...");
+		outro("Goodbye! 👋");
+		return process.exit(0);
 	}
 
 	console.clear();
@@ -107,10 +111,9 @@ async function main() {
 }
 
 async function checkAndRun() {
+	const firstLaunchData = await readFirstLaunchFile();
 	try {
-		const firstLaunchData = await readFirstLaunchFile();
-
-		if (!firstLaunchData || !firstLaunchData.exist) {
+		if (!(await firstLaunchFile.exists()) || !firstLaunchData) {
 			await firstLaunch();
 		}
 		await main();
