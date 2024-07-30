@@ -16,7 +16,7 @@
 	"invalid_token": "No se encontró ningún TOKEN API de Groq válido",
 	"invalid_directory": "Error al obtener el directorio actual",
 	"error_reading_file": "Error al leer el archivo",
-	"default_prompt": "Actuar como autor de un mensaje de confirmación de Git.  Su tarea es crear un mensaje de commit limpio y comprensible.  Le proporcionaré el contexto de 'git diff --staged' en formato JSON.  Este JSON incluirá el nombre del archivo, las funciones modificadas y las constantes.  Genere un mensaje de commit que describa qué cambios se realizaron y dónde, utilizando el tiempo presente.  Aquí está el JSON:",
+	"default_prompt": "Actuar como autor de un mensaje de confirmación de Git.  Su tarea es crear un mensaje de commit limpio y comprensible. Le proporcionaré el contexto de 'git diff --staged' en formato JSON. Genere un mensaje de commit que describa qué cambios se realizaron y dónde, utilizando el tiempo presente. El mensaje no debe exceder los 74 caracteres. Aquí está el JSON:",
 	"is_git_repo": "No en un repositorio de Git.  Saliendo...",
 	"generating_commit": "Generando mensaje de commit...",
 	"prompt_generated": "Prompt generado correctamente",

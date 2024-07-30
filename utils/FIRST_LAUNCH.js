@@ -16,6 +16,7 @@ import { DATA, setData } from "~/utils/KEY";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 await $`mkdir -p /tmp/commitia`;
 await $`touch /tmp/commitia/firstLaunch.json`;
 
@@ -25,7 +26,7 @@ const i18xs = new I18XS({
 	fallbackLocale: "en",
 	showMissingIdentifierMessage: false,
 	missingIdentifierMessage: "Missing_Localization_Identifier",
-	localesDir: path.join(__dirname, "..", "locales"),
+	localesDir: path.join(__dirname, "locales"),
 	showLogs: false,
 });
 

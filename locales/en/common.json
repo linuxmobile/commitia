@@ -16,7 +16,7 @@
 	"invalid_token": "No valid Groq API TOKEN found",
 	"invalid_directory": "Error getting current directory",
 	"error_reading_file": "Error reading file",
-	"default_prompt": "Act as the author of a Git commit message. Your task is to create a clean and comprehensible commit message. I will provide you with the context of 'git diff --staged' in JSON format. This JSON will include the file name, modified functions, and constants. Generate a commit message that describes what changes were made and where, using the present tense. Here is the JSON:",
+	"default_prompt": "Act as the author of a Git commit message. Your task is to create a clean and comprehensible commit message. I will provide you with the context of 'git diff --staged' in JSON format. Generate a commit message that describes what changes were made and where, using the present tense. The message must not exceed 74 characters. Here is the JSON:",
 	"is_git_repo": "Not in a Git repository. Exiting...",
 	"generating_commit": "Generating commit message...",
 	"prompt_generated": "Prompt generated successfully!",

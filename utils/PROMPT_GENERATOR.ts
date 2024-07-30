@@ -28,7 +28,7 @@ async function generatePrompt(
 
 	try {
 		const { object } = await generateObject({
-			model: groq("llama3-groq-70b-8192-tool-use-preview"),
+			model: groq("llama-3.1-70b-versatile"),
 			schema: z.object({
 				commit: z
 					.object({
@@ -44,7 +44,7 @@ async function generatePrompt(
 					),
 			}),
 			prompt: `${DEFAULT_PROMPT} ${context}`,
-			maxTokens: 500,
+			maxTokens: 30,
 			temperature: 0,
 		});
 
