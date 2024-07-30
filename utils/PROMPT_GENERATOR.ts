@@ -39,7 +39,9 @@ async function generatePrompt(
 							.string()
 							.describe("Commit body message. Description of the changes"),
 					})
-					.describe("Commit message for the staged changes"),
+					.describe(
+						"Commit message for the staged changes. Max characters: 74",
+					),
 			}),
 			prompt: `${DEFAULT_PROMPT} ${context}`,
 			maxTokens: 500,
