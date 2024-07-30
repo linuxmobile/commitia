@@ -1,11 +1,11 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateText } from "ai";
+import { z } from "zod";
+import { generateObject } from "ai";
 import { i18xs } from "~/utils/FIRST_LAUNCH";
 import { readFirstLaunchFile } from "~/components/readFirstLaunchFile";
 
 const DEFAULT_PROMPT: string = `${i18xs.t("common.default_prompt")}`;
 let commitMessage: string = "";
-let cleanCommitMessage: string = "";
 
 async function generatePrompt(
 	DATA: string,
@@ -27,27 +27,32 @@ async function generatePrompt(
 	});
 
 	try {
-		const { text } = await generateText({
+		const { object } = await generateObject({
 			model: groq("llama3-groq-70b-8192-tool-use-preview"),
+			schema: z.object({
+				commit: z
+					.object({
+						convention: z
+							.string()
+							.describe("Commit convention: feat, fix, etc."),
+						message: z
+							.string()
+							.describe("Commit body message. Description of the changes"),
+					})
+					.describe("Commit message for the staged changes"),
+			}),
 			prompt: `${DEFAULT_PROMPT} ${context}`,
-			maxTokens: 250,
-			experimental_telemetry: { isEnabled: false },
+			maxTokens: 500,
+			temperature: 0,
 		});
 
-		commitMessage = text;
-
-		const match = text.match(/"([^"]+)"/);
-		if (match && match[1]) {
-			cleanCommitMessage = match[1];
-		} else {
-			cleanCommitMessage = text;
-		}
-
-		return cleanCommitMessage;
+		const { convention, message } = object.commit;
+		commitMessage = `${convention}: ${message}`;
+		return commitMessage;
 	} catch (error) {
 		console.error("Error generating text:", error);
 		throw error;
 	}
 }
 
-export { generatePrompt, commitMessage, cleanCommitMessage };
+export { generatePrompt, commitMessage };

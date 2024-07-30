@@ -24,7 +24,7 @@ import {
 } from "~/components/readFirstLaunchFile";
 import { firstLaunch, i18xs } from "~/utils/FIRST_LAUNCH";
 import { DATA } from "~/utils/KEY";
-import { cleanCommitMessage, generatePrompt } from "~/utils/PROMPT_GENERATOR";
+import { generatePrompt, commitMessage } from "~/utils/PROMPT_GENERATOR";
 
 const s = spinner();
 const selectedFilesOptions = fileOptions;
@@ -85,7 +85,7 @@ async function main() {
 	try {
 		await generatePrompt(DATA, added);
 		s.stop("Prompt generated successfully!");
-		note(`"${cleanCommitMessage}"`);
+		note(`"${commitMessage}"`);
 	} catch (error) {
 		s.stop("Failed to generate prompt.");
 		console.error("Error generating prompt:", error);
@@ -106,7 +106,7 @@ async function main() {
 	}
 
 	outro("The commit was deployed!");
-	await commitStagedFiles(cleanCommitMessage);
+	await commitStagedFiles(commitMessage);
 	await sleep(1000);
 }
 
