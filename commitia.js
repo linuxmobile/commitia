@@ -1,36 +1,58 @@
 #!/usr/bin/env bun
 
-import { firstLaunch, i18xs } from "~/utils/FIRST_LAUNCH";
-import { setTimeout as sleep } from 'node:timers/promises';
-import { DATA } from "~/utils/KEY";
-import { outro, confirm, isCancel, cancel, multiselect, note, spinner } from "@clack/prompts";
+import {
+	cancel,
+	confirm,
+	isCancel,
+	multiselect,
+	note,
+	outro,
+	spinner,
+} from "@clack/prompts";
+import { setTimeout as sleep } from "node:timers/promises";
+import {
+	addStagedFiles,
+	commitStagedFiles,
+	fileOptions,
+	getDiffSummary,
+	resetStagedFiles,
+} from "~/components/gitStageManager";
 import { readFirstLaunchFile } from "~/components/readFirstLaunchFile";
-import { fileOptions, addStagedFiles, resetStagedFiles, getDiffSummary, commitStagedFiles } from "~/components/gitStageManager";
-import { generatePrompt, cleanCommitMessage } from "~/utils/PROMPT_GENERATOR";
+import { firstLaunch, i18xs } from "~/utils/FIRST_LAUNCH";
+import { DATA } from "~/utils/KEY";
+import { cleanCommitMessage, generatePrompt } from "~/utils/PROMPT_GENERATOR";
 
-const s = spinner()
+const s = spinner();
 const selectedFilesOptions = fileOptions;
 
 async function main() {
+	const isGitRepo = await checkGitRepo();
+
+	if (!isGitRepo) {
+		note("Not in a Git repository. Exiting...");
+		outro("Goodbye! 👋");
+		return process.exit(0);
+	}
+
 	const firstLaunchData = await readFirstLaunchFile();
 
 	if (firstLaunchData) {
-		if (firstLaunchData.lang === 'es') {
-			i18xs.changeCurrentLocale('es');
-		} else if (firstLaunchData.lang === 'en') {
-			i18xs.changeCurrentLocale('en');
+		if (firstLaunchData.lang === "es") {
+			i18xs.changeCurrentLocale("es");
+		} else if (firstLaunchData.lang === "en") {
+			i18xs.changeCurrentLocale("en");
 		}
 	}
 
-	console.clear()
+	console.clear();
 
 	const askGitCommitStatus = await confirm({
-		message: `${i18xs.t('common.ask_select_files')}`,
+		message: `${i18xs.t("common.ask_select_files")}`,
 		default: true,
 	});
 
 	if (isCancel(askGitCommitStatus)) {
-		cancel(`${i18xs.t('common.operation_canceled')}`);
+		cancel(`${i18xs.t("common.operation_canceled")}`);
 		return process.exit(0);
 	}
 
@@ -39,13 +61,13 @@ async function main() {
 		selectedFiles = files;
 	} else {
 		selectedFiles = await multiselect({
-			message: `${i18xs.t('common.selecting_files')}`,
+			message: `${i18xs.t("common.selecting_files")}`,
 			options: selectedFilesOptions,
 		});
 	}
 
 	if (isCancel(selectedFiles)) {
-		cancel(`${i18xs.t('common.operation_canceled')}`);
+		cancel(`${i18xs.t("common.operation_canceled")}`);
 		await resetStagedFiles(selectedFiles);
 		return process.exit(0);
 	}
@@ -54,16 +76,16 @@ async function main() {
 
 	const { added } = await getDiffSummary(stagedFiles);
 
-	s.start('Generating commit message...');
+	s.start("Generating commit message...");
 
 	try {
 		await generatePrompt(DATA, added);
-		s.stop('Prompt generated successfully!');
-		note(`"${cleanCommitMessage}"`)
+		s.stop("Prompt generated successfully!");
+		note(`"${cleanCommitMessage}"`);
 	} catch (error) {
-		s.stop('Failed to generate prompt.');
-		console.error('Error generating prompt:', error);
-		cancel(`${i18xs.t('common.operation_canceled')}`);
+		s.stop("Failed to generate prompt.");
+		console.error("Error generating prompt:", error);
+		cancel(`${i18xs.t("common.operation_canceled")}`);
 		await resetStagedFiles(selectedFiles);
 		return process.exit(0);
 	}
@@ -74,7 +96,7 @@ async function main() {
 	});
 
 	if (isCancel(confirmCommit) || !confirmCommit) {
-		cancel(`${i18xs.t('common.operation_canceled')}`);
+		cancel(`${i18xs.t("common.operation_canceled")}`);
 		await resetStagedFiles(selectedFiles);
 		return process.exit(0);
 	}
@@ -82,7 +104,6 @@ async function main() {
 	outro("The commit was deployed!");
 	await commitStagedFiles(cleanCommitMessage);
 	await sleep(1000);
-
 }
 
 async function checkAndRun() {
@@ -94,7 +115,7 @@ async function checkAndRun() {
 		}
 		await main();
 	} catch (error) {
-		console.error(`${i18xs.t('common.error_verifying_launchfile')}`, error);
+		console.error(`${i18xs.t("common.error_verifying_launchfile")}`, error);
 		await firstLaunch();
 		await main();
 	}

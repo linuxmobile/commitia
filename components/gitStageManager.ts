@@ -2,79 +2,99 @@ import { simpleGit, type SimpleGit, type SimpleGitOptions } from "simple-git";
 import { tokenCount } from "~/utils/countTokens";
 
 const options: Partial<SimpleGitOptions> = {
-  baseDir: process.cwd(),
-  binary: 'git',
-  maxConcurrentProcesses: 6,
-  trimmed: false,
+	baseDir: process.cwd(),
+	binary: "git",
+	maxConcurrentProcesses: 6,
+	trimmed: false,
 };
-const git: SimpleGit = simpleGit(options);
 
 let totalTokenCount = 0;
 
+const git: SimpleGit = simpleGit(options);
 const status = await git.status();
 
+async function checkIfGitRepo(): Promise<boolean> {
+	return await git.checkIsRepo();
+}
+
 async function getFileOptions() {
-  const fileOptions = status.files.map(file => ({ value: file.path, label: file.path }));
-  return fileOptions;
+	const fileOptions = status.files.map((file) => ({
+		value: file.path,
+		label: file.path,
+	}));
+	return fileOptions;
 }
 
 async function addStagedFiles(stagedFiles: string[]) {
-  for (const file of stagedFiles) {
-    await git.add(file);
-  }
-  return stagedFiles;
+	for (const file of stagedFiles) {
+		await git.add(file);
+	}
+	return stagedFiles;
 }
 
 async function resetStagedFiles(files: string[]) {
-  for (const file of files) {
-    await git.reset(['--', file]);
-  }
+	for (const file of files) {
+		await git.reset(["--", file]);
+	}
 }
 
 function parseDiff(diff: string, fileName: string) {
-  const lines = diff.split('\n');
-  let added: string[] = [];
-  let currentFile = '';
+	const lines = diff.split("\n");
+	let added: string[] = [];
+	let currentFile = "";
 
-  for (const line of lines) {
-    if (line.startsWith('+++ b/')) {
-      currentFile = line.replace('+++ b/', '');
-    } else if (line.startsWith('+') && !line.startsWith('+++')) {
-      let cleanedLine = line.substring(1)
-        .replace(/\\(.)/g, '$1')
-        .replace(/\s+/g, '')
-        .replace(/\\"/g, '"')
-        .trim()
+	for (const line of lines) {
+		if (line.startsWith("+++ b/")) {
+			currentFile = line.replace("+++ b/", "");
+		} else if (line.startsWith("+") && !line.startsWith("+++")) {
+			let cleanedLine = line
+				.substring(1)
+				.replace(/\\(.)/g, "$1")
+				.replace(/\s+/g, "")
+				.replace(/\\"/g, '"')
+				.trim();
 
-      if (cleanedLine) {
-        added.push(cleanedLine);
-      }
-    }
-  }
+			if (cleanedLine) {
+				added.push(cleanedLine);
+			}
+		}
+	}
 
-  return {
-    file: currentFile || fileName,
-    added
-  };
+	return {
+		file: currentFile || fileName,
+		added: added.join(""),
+	};
 }
 
-async function getDiffSummary(files: string[]): Promise<{ added: string[], totalTokenCount: number }> {
-  const diffCommand = ['--cached', '--', ...files];
-  const diff = await git.diff(diffCommand);
-  const parsedDiff = parseDiff(diff, files[0]);
+async function getDiffSummary(
+	files: string[],
+): Promise<{ added: string; totalTokenCount: number }> {
+	const diffCommand = ["--cached", "--", ...files];
+	const diff = await git.diff(diffCommand);
+	const parsedDiff = parseDiff(diff, files[0]);
 
-  const totalTokenCount = parsedDiff.added.reduce((sum, line) => sum + tokenCount(line), 0);
+	const totalTokenCount = parsedDiff.added
+		.split(" ")
+		.reduce((sum, line) => sum + tokenCount(line), 0);
 
-  return {
-    added: parsedDiff.added,
-    totalTokenCount
-  };
+	return {
+		added: parsedDiff.added,
+		totalTokenCount,
+	};
 }
 
 async function commitStagedFiles(commitMessage: string) {
-  await git.commit(commitMessage);
+	await git.commit(commitMessage);
 }
 
 const fileOptions = await getFileOptions();
 
-export { fileOptions, addStagedFiles, resetStagedFiles, getDiffSummary, totalTokenCount, commitStagedFiles };
+export {
+	addStagedFiles,
+	checkIfGitRepo,
+	commitStagedFiles,
+	fileOptions,
+	getDiffSummary,
+	resetStagedFiles,
+	totalTokenCount,
+};
