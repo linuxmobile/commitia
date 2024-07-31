@@ -9,7 +9,8 @@ let commitMessage: string = "";
 
 async function generatePrompt(
 	DATA: string,
-	context: string[],
+	added: string[],
+	removed: string[],
 ): Promise<string> {
 	const firstLaunchData = await readFirstLaunchFile();
 
@@ -47,7 +48,7 @@ async function generatePrompt(
 					),
 			}),
 			mode: "json",
-			prompt: `${DEFAULT_PROMPT} ${context}`,
+			prompt: `${DEFAULT_PROMPT} removed: ${removed} added: ${added}`,
 			maxTokens: 40,
 			temperature: 0,
 		});

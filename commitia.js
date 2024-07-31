@@ -78,12 +78,12 @@ async function main() {
 
 	const stagedFiles = await addStagedFiles(selectedFiles);
 
-	const { added } = await getDiffSummary(stagedFiles);
+	const { added, removed } = await getDiffSummary(stagedFiles);
 
 	s.start(`${i18xs.t("common.generating_commit")}`);
 
 	try {
-		await generatePrompt(DATA, added);
+		await generatePrompt(DATA, added, removed);
 		s.stop(`${i18xs.t("common.prompt_generated")}`);
 		note(`"${commitMessage}"`);
 	} catch (error) {

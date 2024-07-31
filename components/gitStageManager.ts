@@ -41,6 +41,7 @@ async function resetStagedFiles(files: string[]) {
 function parseDiff(diff: string, fileName: string) {
 	const lines = diff.split("\n");
 	let added: string[] = [];
+	let removed: string[] = [];
 	let currentFile = "";
 
 	for (const line of lines) {
@@ -57,29 +58,37 @@ function parseDiff(diff: string, fileName: string) {
 			if (cleanedLine) {
 				added.push(cleanedLine);
 			}
+		} else if (line.startsWith("-") && !line.startsWith("---")) {
+			let cleanedLine = line
+				.substring(1)
+				.replace(/\\(.)/g, "$1")
+				.replace(/\s+/g, "")
+				.replace(/\\"/g, '"')
+				.trim();
+
+			if (cleanedLine) {
+				removed.push(cleanedLine);
+			}
 		}
 	}
 
 	return {
 		file: currentFile || fileName,
 		added: added.join(""),
+		removed: removed.join(""),
 	};
 }
 
 async function getDiffSummary(
 	files: string[],
-): Promise<{ added: string; totalTokenCount: number }> {
+): Promise<{ added: string; removed: string }> {
 	const diffCommand = ["--cached", "--", ...files];
 	const diff = await git.diff(diffCommand);
 	const parsedDiff = parseDiff(diff, files[0]);
 
-	const totalTokenCount = parsedDiff.added
-		.split(" ")
-		.reduce((sum, line) => sum + tokenCount(line), 0);
-
 	return {
 		added: parsedDiff.added,
-		totalTokenCount,
+		removed: parsedDiff.removed,
 	};
 }
 
