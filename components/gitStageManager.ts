@@ -32,6 +32,12 @@ async function addStagedFiles(stagedFiles: string[]) {
 	return stagedFiles;
 }
 
+async function addAllFiles() {
+    await git.add(".");
+    const status = await git.status();
+    return status.files.map(file => file.path);
+}
+
 async function resetStagedFiles(files: string[]) {
 	for (const file of files) {
 		await git.reset(["--", file]);
@@ -99,6 +105,7 @@ async function commitStagedFiles(commitMessage: string) {
 const fileOptions = await getFileOptions();
 
 export {
+	addAllFiles,
 	addStagedFiles,
 	checkIfGitRepo,
 	commitStagedFiles,

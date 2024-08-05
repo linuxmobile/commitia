@@ -17,6 +17,7 @@ import {
 	fileOptions,
 	getDiffSummary,
 	resetStagedFiles,
+	addAllFiles
 } from "~/components/gitStageManager";
 import {
 	readFirstLaunchFile,
@@ -62,7 +63,7 @@ async function main() {
 
 	let selectedFiles;
 	if (!askGitCommitStatus) {
-		selectedFiles = files;
+		selectedFiles = await addAllFiles();
 	} else {
 		selectedFiles = await multiselect({
 			message: `${i18xs.t("common.selecting_files")}`,
