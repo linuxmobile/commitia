@@ -22,11 +22,7 @@ uninstall_commitia() {
     exit 0
 }
 
-if [ "$(uname -s)" = "Linux" ] && [ -f /etc/os-release ] && grep -q "ID=nixos" /etc/os-release; then
-    DEFAULT_INSTALL_DIR="/usr/bin"
-else
-    DEFAULT_INSTALL_DIR="$HOME/.local/bin"
-fi
+DEFAULT_INSTALL_DIR="$HOME/.local/bin"
 
 INSTALL_DIR="$DEFAULT_INSTALL_DIR"
 for arg in "$@"; do
@@ -40,6 +36,9 @@ for arg in "$@"; do
             ;;
     esac
 done
+
+echo "INSTALL_DIR is set to: $INSTALL_DIR"
+echo "EUID is: $EUID"
 
 if ! command -v bun &> /dev/null
 then
