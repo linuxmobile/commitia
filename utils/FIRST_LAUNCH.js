@@ -103,7 +103,7 @@ ${i18xs.t("common.goodbye")}`),
 	const confirmUseOwnApi = await confirm({
 		message: `${i18xs.t("common.ask_use_token")}`,
 		default: true,
-	}); // Groq API confirmation
+	}); // Google API confirmation
 
 	if (isCancel(confirmUseOwnApi)) {
 		cancel(`${i18xs.t("common.operation_cancelled")}`);
@@ -113,18 +113,18 @@ ${i18xs.t("common.goodbye")}`),
 	if (confirmUseOwnApi) {
 		if (jsonData.lang === "en") {
 			note(`
-  To obtain your Groq TOKEN, a new window will open in your default browser.
+  To obtain your Google TOKEN, a new window will open in your default browser.
   If you already have a TOKEN, you can paste it here.
   `);
 		} else {
 			note(`
-  Para obtener tu TOKEN de Groq, se abrirá una nueva ventana
+  Para obtener tu TOKEN de Google, se abrirá una nueva ventana
   en tu navegador predeterminado. Si ya tienes un TOKEN,
   puedes pegarlo aquí.
   `);
 		}
 
-		await open("https://console.groq.com/keys");
+		await open("https://aistudio.google.com/app/apikey");
 
 		const tokenQuestion = await password({
 			message: `${i18xs.t("common.paste_token")}`,
