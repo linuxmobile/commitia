@@ -1,0 +1,32 @@
+cargo-features = ["edition2024"]
+
+[package]
+name = "commitia"
+version = "0.0.2"
+edition = "2021"
+authors = ["linuxmobile <bdiez19@gmail.com>"]
+description = "Commit message generator inspired by Argentine slang"
+homepage = "https://commitia.linu.dev"
+exclude = ["assets/*"]
+readme = "README.md"
+license = "MIT"
+categories = ["command-line-utilities"]
+keywords = ["git", "commit", "cli", "commitizen", "conventional-commits"]
+
+[dependencies]
+aes = "0.8.4"
+asyncgit = "0.26.3"
+block-modes = "0.9.1"
+block-padding = "0.3.3"
+cbc = { version = "0.1.2", features = ["alloc"] }
+clap = { version = "4.5.16", features = ["derive"] }
+crossterm = "0.28.1"
+dialoguer = "0.11.0"
+dirs = "5.0.1"
+google-generative-ai-rs = "0.3.2"
+hex = "0.4.3"
+hex-literal = "0.4.1"
+openssl-sys = "0.9.103"
+ratatui = "0.28.0"
+serde = "1.0.208"
+serde_json = "1.0.126"
