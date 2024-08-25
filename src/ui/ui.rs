@@ -81,7 +81,7 @@ pub fn run_ui() -> Result<(), io::Error> {
         To get started with Commitia, you'll need to provide your Google AI token.";
 
   let start_time = Instant::now();
-  let splash_duration = Duration::from_secs(5);
+  let splash_duration = Duration::from_secs(4);
 
   while start_time.elapsed() < splash_duration {
     let progress = start_time.elapsed().as_secs_f64() / splash_duration.as_secs_f64();
