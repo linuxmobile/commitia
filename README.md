@@ -12,78 +12,112 @@
 - **Multi-language Support**
 - **Git Integration**
 - **First Launch Setup**
-- **File Selection**
+- **Google AI Integration**: Uses Google AI for generating commit messages.
+- **File Selection**: Allows you to manually select files to commit.
+- **Secure Token Storage**: Encrypts and stores your Google AI token securely.
 
 ## Installation
 
-To install Commitia, run the following script:
+To get started with Commitia, follow these steps:
 
-```bash
-./install.sh
-```
+1. **Clone the Repository**:
+    ```sh
+    git clone https://github.com/yourusername/commitia.git
+    cd commitia
+    ```
 
-By default, this script will install Commitia in the `~/.local/bin` directory. If you prefer to install it in a different directory, you can specify the directory using the `--dir=DIR` argument:
+2. **Install Rust**:
+    Ensure you have Rust installed. If not, you can install it from [rustup.rs](https://rustup.rs/).
 
-### Prerequisites
+3. **Build the Project**:
+    ```sh
+    cargo build --release
+    ```
 
-Make sure you have Bun installed on your system. You can install Bun by following the instructions on their official website.
-
-### Running Commitiá
-
-To run Commitia, use the following command:
-
-```bash
-commitia ...
-```
-
-If you want to be able to execute Commitia from any directory, you need to add `~/.local/bin` to your **shell's PATH**. You can do this by adding the following line to your `~/.bashrc` (for Bash) or `~/.zshrc` (for Zsh) file:
-
-```bash
-export PATH="$HOME/.local/bin:$PATH"
-
-# Next to it:
-source ~/.bashrc # for Bash
-source ~/.zshrc  # for zsh
-```
+4. **Run the Application**:
+    ```sh
+    cargo run --release
+    ```
 
 <details> <summary><h2>How It Works</h2></summary>
 
-Commitia is a Command Line Interface (CLI) built with **Bun**, **JavaScript**, and **TypeScript**. Below is an explanation of how the main components of the project work:
+Commitia is a command-line interface (CLI) tool built in Rust. Here's a summary of how it works:
 
-### commitia.js
+1. **Initial Setup**:
+    - When you first run Commitia, it will display a splash screen and prompt you to enter your Google AI token.
+    - The token is securely encrypted and stored in a configuration file.
 
-This file is the entry point of the CLI. It uses various libraries to handle user interactions and Git operations. The main flow of the program is as follows:
+2. **Commit Message Generation**:
+    - After setting up the token, Commitia will ask if you want to select files to commit.
+    - If you choose to select files, it will display a list of staged files for you to choose from.
+    - Once the files are selected, Commitia will generate a commit message using Google AI and Argentine slang.
 
-- **Git Repository Verification**: Checks if the current directory is a Git repository.
-- **File Selection**: Allows the user to select the files they want to commit.
-- **Commit Message Generation**: Uses the Vercel SDK to generate a commit message based on the changes made.
-- **Confirmation and Commit**: Requests user confirmation before making the commit.
+3. **User Interface**:
+    - The UI is built using the `ratatui` library, providing a smooth and interactive experience.
+    - It includes features like text input, file selection, and progress gauges.
 
-### gitStageManager.ts
+## Usage
 
-This file contains functions to handle Git operations, such as:
+To use Commitia, simply run the following command in your terminal:
 
-- **checkIfGitRepo**: Verifies if the current directory is a Git repository.
-- **addStagedFiles**: Adds files to the Git stage.
-- **getDiffSummary**: Gets a summary of the differences between the staged files.
-- **commitStagedFiles**: Commits the staged files.
+```sh
+cargo run --release
+```
 
-### PROMPT_GENERATOR.ts
-
-This file uses the Vercel SDK to generate commit messages. The main function is `generatePrompt`, which takes the added and deleted changes and generates a commit message using an AI model.
+Follow the on-screen instructions to enter your Google AI token and select files for committing.
 
 </details>
 
-## Why Bun, JavaScript, and TypeScript?
+## Contribution Guidelines
 
-I chose Bun because it is a fast, all-in-one runtime for JavaScript and TypeScript. This makes it easier to create efficient and fast CLI applications. JavaScript and TypeScript are versatile and widely-used languages, making the project accessible to a broad audience of developers.
+We welcome contributions to Commitia! Here are some ways you can help:
 
-## Contributions
+### To-Do List
 
-Contributions are welcome. If you have any suggestions or find any issues, **please open an issue or submit a pull request**.
+- [ ] **Improve Documentation**: Enhance the README.md and add more detailed documentation.
+- [ ] **Add Unit Tests**: Increase test coverage for the existing codebase.
+- [ ] **Enhance UI**: Improve the user interface for better user experience.
+- [ ] **Add More Slang**: Expand the list of Argentine slang used in commit messages.
+- [ ] **Optimize Performance**: Profile and optimize the performance of the application.
+- [ ] **Bug Fixes**: Identify and fix bugs in the current implementation.
+- [ ] **Feature Requests**: Suggest and implement new features.
+
+### How to Contribute
+
+1. **Fork the Repository**:
+    - Click the "Fork" button at the top right of this page to create a copy of the repository in your GitHub account.
+
+2. **Clone Your Fork**:
+    ```sh
+    git clone https://github.com/yourusername/commitia.git
+    cd commitia
+    ```
+
+3. **Create a Branch**:
+    ```sh
+    git checkout -b feature/your-feature-name
+    ```
+
+4. **Make Your Changes**:
+    - Implement your changes and commit them with clear and concise commit messages.
+
+5. **Push to Your Fork**:
+    ```sh
+    git push origin feature/your-feature-name
+    ```
+
+6. **Create a Pull Request**:
+    - Go to the original repository and click on the "New Pull Request" button.
+    - Provide a detailed description of your changes and submit the pull request.
 
 ## License
 
-This project is licensed under the MIT License.
+Commitia is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
 
-_This project was created using `bun init` in bun v1.1.20. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime._
+## Contact
+
+For any questions or feedback, feel free to reach out to the author at [linuxmobile](mailto:bdiez19@gmail.com).
+
+---
+
+Thank you for using Commitia! We hope it makes your commit messages more enjoyable and engaging.
