@@ -152,18 +152,15 @@ pub fn run_ui() -> Result<(), io::Error> {
 
     match events.next() {
       Ok(Event::Input(key_event)) => match key_event.code {
-        KeyCode::Char('c') => {
-          // Open the URL in the default web browser
-          match webbrowser::open("https://aistudio.google.com/app/apikey") {
-            Ok(_) => {
-              app.input_mode = InputMode::Editing;
-              break;
-            }
-            Err(e) => {
-              eprintln!("Failed to open the web browser: {}", e);
-            }
+        KeyCode::Char('c') => match webbrowser::open("https://aistudio.google.com/app/apikey") {
+          Ok(_) => {
+            app.input_mode = InputMode::Editing;
+            break;
           }
-        }
+          Err(e) => {
+            eprintln!("Failed to open the web browser: {}", e);
+          }
+        },
         KeyCode::Char('q') => {
           disable_raw_mode()?;
           execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
