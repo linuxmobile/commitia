@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event as CEvent, KeyCode};
+use crossterm::event::{self, Event as CEvent, KeyEvent};
 use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -9,8 +9,8 @@ pub enum Event<I> {
 }
 
 pub struct Events {
-  rx: mpsc::Receiver<Event<KeyCode>>,
-  _tx: mpsc::Sender<Event<KeyCode>>,
+  rx: mpsc::Receiver<Event<KeyEvent>>,
+  _tx: mpsc::Sender<Event<KeyEvent>>,
 }
 
 impl Events {
@@ -28,7 +28,7 @@ impl Events {
 
         if event::poll(timeout).unwrap() {
           if let CEvent::Key(key) = event::read().unwrap() {
-            event_tx.send(Event::Input(key.code)).unwrap();
+            event_tx.send(Event::Input(key)).unwrap();
           }
         }
 
@@ -43,7 +43,7 @@ impl Events {
     Events { rx, _tx: tx }
   }
 
-  pub fn next(&self) -> Result<Event<KeyCode>, mpsc::RecvError> {
+  pub fn next(&self) -> Result<Event<KeyEvent>, mpsc::RecvError> {
     self.rx.recv()
   }
 }

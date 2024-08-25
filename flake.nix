@@ -32,6 +32,8 @@
             rust-analyzer
             pkg-config
             openssl
+            openssl.dev
+            patchelf
             (pkgs.fenix.latest.withComponents [
               "cargo"
               "clippy"
@@ -40,6 +42,9 @@
               "rustfmt"
             ])
           ];
+          shellHook = ''
+            export LD_LIBRARY_PATH=${pkgs.openssl.out}/lib:$LD_LIBRARY_PATH
+          '';
         };
       }
     );

@@ -2,15 +2,15 @@
 pub enum InputMode {
   Normal,
   Editing,
+  SelectingFiles,
 }
 
 pub struct App {
   pub token: String,
   pub input_mode: InputMode,
-  pub show_welcome: bool,
-  pub show_popup: bool,
   pub is_token_set: bool,
-  pub popup_opened: bool,
+  pub ask_select_files: bool,
+  pub staged_files: Vec<String>,
 }
 
 impl App {
@@ -18,10 +18,9 @@ impl App {
     App {
       token: String::new(),
       input_mode: InputMode::Normal,
-      show_welcome: true,
-      show_popup: false,
       is_token_set: false,
-      popup_opened: false,
+      ask_select_files: false,
+      staged_files: Vec::new(),
     }
   }
 }

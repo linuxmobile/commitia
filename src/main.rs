@@ -1,4 +1,5 @@
 mod config;
+mod git;
 mod ui;
 
 use ui::run_ui;

@@ -12,16 +12,15 @@ readme = "README.md"
 license = "MIT"
 categories = ["command-line-utilities"]
 keywords = ["git", "commit", "cli", "commitizen", "conventional-commits"]
+include = ["assets/*"]
 
 [dependencies]
 aes = "0.8.4"
 asyncgit = "0.26.3"
-block-modes = "0.9.1"
 block-padding = "0.3.3"
-cbc = { version = "0.1.2", features = ["alloc"] }
+cbc = "0.1.2"
 clap = { version = "4.5.16", features = ["derive"] }
 crossterm = "0.28.1"
-dialoguer = "0.11.0"
 dirs = "5.0.1"
 google-generative-ai-rs = "0.3.2"
 hex = "0.4.3"
@@ -30,3 +29,7 @@ openssl-sys = "0.9.103"
 ratatui = "0.28.0"
 serde = "1.0.208"
 serde_json = "1.0.126"
+tui-big-text = "0.6.0"
+tui-prompts = "0.4.0"
+tui-widgets = "0.3.0"
+webbrowser = "1.0.1"
