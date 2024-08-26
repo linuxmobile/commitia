@@ -1,7 +1,9 @@
-use crate::config;
-use crate::git::get_staged_files;
+use crate::config::save_token;
+use crate::git::{get_file_diff, get_git_status_files};
 use crate::ui::app::{App, InputMode};
 use crate::ui::events::{Event, Events};
+use asyncgit::sync::diff::DiffLineType;
+use asyncgit::sync::status::StatusItemType;
 use crossterm::{
   event::{KeyCode, KeyModifiers},
   execute,
@@ -52,13 +54,32 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     .split(popup_layout[1])[1]
 }
 
-fn show_file_selector(f: &mut Frame, files: &[String]) {
+fn show_file_selector(f: &mut Frame, files: &[(String, StatusItemType)], selected_index: usize) {
   let chunks = Layout::default()
     .direction(Direction::Vertical)
     .constraints([Constraint::Percentage(100)].as_ref())
     .split(f.area());
 
-  let items: Vec<ListItem> = files.iter().map(|f| ListItem::new(f.as_str())).collect();
+  let items: Vec<ListItem> = files
+    .iter()
+    .enumerate()
+    .map(|(i, (path, status))| {
+      let style = if i == selected_index {
+        Style::default().fg(Color::Yellow)
+      } else {
+        Style::default().fg(Color::White)
+      };
+      let status_str = match status {
+        StatusItemType::Modified => " M ",
+        StatusItemType::New => "?? ",
+        StatusItemType::Deleted => " D ",
+        StatusItemType::Renamed => " R ",
+        StatusItemType::Typechange => " T ",
+        _ => "   ",
+      };
+      ListItem::new(format!("{} {}", status_str, path)).style(style)
+    })
+    .collect();
   let files_list = List::new(items)
     .block(Block::default().borders(Borders::ALL).title("Select Files"))
     .style(Style::default().fg(Color::White));
@@ -66,7 +87,33 @@ fn show_file_selector(f: &mut Frame, files: &[String]) {
   f.render_widget(files_list, chunks[0]);
 }
 
-pub fn run_ui() -> Result<(), io::Error> {
+fn show_file_diff(f: &mut Frame, diff: &[(DiffLineType, String)]) {
+  let chunks = Layout::default()
+    .direction(Direction::Vertical)
+    .constraints([Constraint::Percentage(100)].as_ref())
+    .split(f.area());
+
+  let items: Vec<ListItem> = diff
+    .iter()
+    .map(|(line_type, line)| {
+      let style = match line_type {
+        DiffLineType::Add => Style::default().fg(Color::Green),
+        DiffLineType::Delete => Style::default().fg(Color::Red),
+        DiffLineType::Header => Style::default().fg(Color::Cyan),
+        _ => Style::default().fg(Color::White),
+      };
+      ListItem::new(line.as_str()).style(style)
+    })
+    .collect();
+
+  let diff_list = List::new(items)
+    .block(Block::default().borders(Borders::ALL).title("File Diff"))
+    .style(Style::default().fg(Color::White));
+
+  f.render_widget(diff_list, chunks[0]);
+}
+
+pub fn run_ui(initial_setup: bool) -> Result<(), io::Error> {
   enable_raw_mode()?;
   let mut stdout = io::stdout();
   execute!(stdout, EnterAlternateScreen)?;
@@ -115,149 +162,210 @@ pub fn run_ui() -> Result<(), io::Error> {
     std::thread::sleep(Duration::from_millis(100));
   }
 
-  loop {
-    terminal.draw(|f| {
-      let size = f.area();
-      let area = centered_rect(80, 50, size);
+  if initial_setup {
+    loop {
+      terminal.draw(|f| {
+        let size = f.area();
+        let area = centered_rect(80, 50, size);
 
-      let additional_paragraph = Paragraph::new(additional_message)
-        .style(Style::default().fg(Color::White))
-        .block(
-          Block::default()
-            .borders(Borders::ALL)
-            .title("Welcome to Commitia"),
-        )
-        .alignment(Alignment::Left)
-        .wrap(Wrap { trim: true });
-
-      f.render_widget(additional_paragraph, area);
-
-      let options_area = Rect {
-        x: area.x,
-        y: area.y + area.height + 1,
-        width: area.width,
-        height: 3,
-      };
-
-      let options_paragraph = Paragraph::new("Press 'c' to continue or 'q' to quit.")
-        .style(
-          Style::default()
-            .fg(Color::Yellow)
-            .add_modifier(Modifier::BOLD),
-        )
-        .alignment(Alignment::Center);
-
-      f.render_widget(options_paragraph, options_area);
-    })?;
-
-    match events.next() {
-      Ok(Event::Input(key_event)) => match key_event.code {
-        KeyCode::Char('c') => match webbrowser::open("https://aistudio.google.com/app/apikey") {
-          Ok(_) => {
-            app.input_mode = InputMode::Editing;
-            break;
-          }
-          Err(e) => {
-            eprintln!("Failed to open the web browser: {}", e);
-          }
-        },
-        KeyCode::Char('q') => {
-          disable_raw_mode()?;
-          execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-          terminal.show_cursor()?;
-          return Ok(());
-        }
-        _ => {}
-      },
-      Ok(Event::Tick) => {}
-      Err(e) => {
-        eprintln!("Error: {:?}", e);
-        break;
-      }
-    }
-  }
-
-  loop {
-    terminal.draw(|f| {
-      let size = f.area();
-      let area = top_left_rect(60, 20, size);
-
-      if !app.is_token_set {
-        let input = Paragraph::new(app.token.as_ref() as &str)
-          .style(match app.input_mode {
-            InputMode::Normal => Style::default(),
-            InputMode::Editing => Style::default().fg(Color::Yellow),
-            InputMode::SelectingFiles => Style::default().fg(Color::Cyan),
-          })
+        let additional_paragraph = Paragraph::new(additional_message)
+          .style(Style::default().fg(Color::White))
           .block(
             Block::default()
               .borders(Borders::ALL)
-              .title("Enter Google AI API token"),
+              .title("Welcome to Commitia"),
           )
-          .alignment(Alignment::Left);
-
-        f.render_widget(input, area);
-      } else if app.ask_select_files {
-        let question = Paragraph::new("Do you want to select the files to commit? (y/n)")
-          .style(Style::default().fg(Color::White))
-          .block(Block::default().borders(Borders::ALL).title("Select Files"))
           .alignment(Alignment::Left)
           .wrap(Wrap { trim: true });
 
-        f.render_widget(question, area);
-      } else if app.input_mode == InputMode::SelectingFiles {
-        show_file_selector(f, &app.staged_files);
-      }
-    })?;
+        f.render_widget(additional_paragraph, area);
 
-    match events.next() {
-      Ok(Event::Input(key_event)) => {
-        if app.input_mode == InputMode::Editing {
-          match key_event.code {
-            KeyCode::Char(c) => {
-              app.token.push(c);
-            }
-            KeyCode::Backspace => {
-              app.token.pop();
-            }
-            KeyCode::Enter => {
-              config::save_token(&app.token)?;
-              app.is_token_set = true;
-              app.input_mode = InputMode::Normal;
-              app.ask_select_files = true;
-            }
-            KeyCode::Esc => {
-              app.input_mode = InputMode::Normal;
-            }
-            _ => {}
-          }
-        } else if app.ask_select_files {
-          match key_event.code {
-            KeyCode::Char('y') => {
-              app.input_mode = InputMode::SelectingFiles;
-              app.ask_select_files = false;
-              app.staged_files = get_staged_files().unwrap_or_else(|_| vec![]);
-            }
-            KeyCode::Char('n') => {
-              app.ask_select_files = false;
-            }
-            _ => {}
-          }
-        } else {
-          match key_event.code {
-            KeyCode::Esc | KeyCode::Char('c')
-              if key_event.modifiers.contains(KeyModifiers::CONTROL) =>
-            {
+        let options_area = Rect {
+          x: area.x,
+          y: area.y + area.height + 1,
+          width: area.width,
+          height: 3,
+        };
+
+        let options_paragraph = Paragraph::new("Press 'c' to continue or 'q' to quit.")
+          .style(
+            Style::default()
+              .fg(Color::Yellow)
+              .add_modifier(Modifier::BOLD),
+          )
+          .alignment(Alignment::Center);
+
+        f.render_widget(options_paragraph, options_area);
+      })?;
+
+      match events.next() {
+        Ok(Event::Input(key_event)) => match key_event.code {
+          KeyCode::Char('c') => match webbrowser::open("https://aistudio.google.com/app/apikey") {
+            Ok(_) => {
+              app.input_mode = InputMode::Editing;
               break;
             }
-            _ => {}
+            Err(e) => {
+              eprintln!("Failed to open the web browser: {}", e);
+            }
+          },
+          KeyCode::Char('q') => {
+            disable_raw_mode()?;
+            execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+            terminal.show_cursor()?;
+            return Ok(());
           }
+          _ => {}
+        },
+        Ok(Event::Tick) => {}
+        Err(e) => {
+          eprintln!("Error: {:?}", e);
+          break;
         }
       }
-      Ok(Event::Tick) => {}
-      Err(e) => {
-        eprintln!("Error: {:?}", e);
-        break;
+    }
+
+    loop {
+      terminal.draw(|f| {
+        let size = f.area();
+        let area = top_left_rect(60, 20, size);
+
+        if !app.is_token_set {
+          let input = Paragraph::new(app.token.as_ref() as &str)
+            .style(match app.input_mode {
+              InputMode::Normal => Style::default(),
+              InputMode::Editing => Style::default().fg(Color::Yellow),
+              InputMode::SelectingFiles => Style::default().fg(Color::Cyan),
+            })
+            .block(
+              Block::default()
+                .borders(Borders::ALL)
+                .title("Enter Google AI API token"),
+            )
+            .alignment(Alignment::Left);
+
+          f.render_widget(input, area);
+        } else if app.ask_select_files {
+          let question = Paragraph::new("Do you want to select the files to commit? (y/n)")
+            .style(Style::default().fg(Color::White))
+            .block(Block::default().borders(Borders::ALL).title("Select Files"))
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true });
+
+          f.render_widget(question, area);
+        } else if app.input_mode == InputMode::SelectingFiles {
+          show_file_selector(f, &app.staged_files, 0);
+        }
+      })?;
+
+      match events.next() {
+        Ok(Event::Input(key_event)) => {
+          if app.input_mode == InputMode::Editing {
+            match key_event.code {
+              KeyCode::Char(c) => {
+                app.token.push(c);
+              }
+              KeyCode::Backspace => {
+                app.token.pop();
+              }
+              KeyCode::Enter => {
+                save_token(&app.token)?;
+                app.is_token_set = true;
+                app.input_mode = InputMode::Normal;
+                app.ask_select_files = true;
+              }
+              KeyCode::Esc => {
+                app.input_mode = InputMode::Normal;
+              }
+              _ => {}
+            }
+          } else if app.ask_select_files {
+            match key_event.code {
+              KeyCode::Char('y') => {
+                app.input_mode = InputMode::SelectingFiles;
+                app.ask_select_files = false;
+                app.staged_files = get_git_status_files().unwrap_or_else(|_| vec![]);
+              }
+              KeyCode::Char('n') => {
+                app.ask_select_files = false;
+              }
+              _ => {}
+            }
+          } else {
+            match key_event.code {
+              KeyCode::Esc | KeyCode::Char('c')
+                if key_event.modifiers.contains(KeyModifiers::CONTROL) =>
+              {
+                break;
+              }
+              _ => {}
+            }
+          }
+        }
+        Ok(Event::Tick) => {}
+        Err(e) => {
+          eprintln!("Error: {:?}", e);
+          break;
+        }
+      }
+    }
+  } else {
+    app.is_token_set = true;
+    app.staged_files = get_git_status_files().unwrap_or_else(|_| vec![]);
+    app.input_mode = InputMode::SelectingFiles;
+    let mut selected_index = 0;
+
+    loop {
+      terminal.draw(|f| {
+        let size = f.area();
+        let _chunks = Layout::default()
+          .direction(Direction::Horizontal)
+          .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
+          .split(size);
+
+        show_file_selector(f, &app.staged_files, selected_index);
+
+        if let Some(selected_file) = &app.selected_file {
+          show_file_diff(f, &app.file_diff);
+        }
+      })?;
+
+      match events.next() {
+        Ok(Event::Input(key_event)) => {
+          if app.input_mode == InputMode::SelectingFiles {
+            match key_event.code {
+              KeyCode::Char('j') => {
+                // Move selection down
+                if selected_index < app.staged_files.len() - 1 {
+                  selected_index += 1;
+                }
+              }
+              KeyCode::Char('k') => {
+                // Move selection up
+                if selected_index > 0 {
+                  selected_index -= 1;
+                }
+              }
+              KeyCode::Enter => {
+                if let Some((path, _)) = app.staged_files.get(selected_index) {
+                  app.selected_file = Some(path.clone());
+                  app.file_diff = get_file_diff(path).unwrap_or_else(|_| vec![]);
+                }
+              }
+              KeyCode::Esc | KeyCode::Char('c')
+                if key_event.modifiers.contains(KeyModifiers::CONTROL) =>
+              {
+                break;
+              }
+              _ => {}
+            }
+          }
+        }
+        Ok(Event::Tick) => {}
+        Err(e) => {
+          eprintln!("Error: {:?}", e);
+          break;
+        }
       }
     }
   }

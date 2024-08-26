@@ -16,11 +16,13 @@ type Aes256CbcDecryptor = Decryptor<aes::Aes256>;
 const KEY: [u8; 32] = hex!("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
 const IV: [u8; 16] = hex!("1a1b1c1d1e1f20212223242526272829");
 
+/// Configuration structure.
 #[derive(Serialize, Deserialize)]
-struct Config {
-  token: String,
+pub struct Config {
+  pub token: String,
 }
 
+/// Checks if the configuration file exists.
 pub fn config_exists() -> bool {
   let config_path = match get_config_path() {
     Ok(path) => path,
@@ -29,6 +31,7 @@ pub fn config_exists() -> bool {
   Path::new(&config_path).exists()
 }
 
+/// Encrypts the given data using AES-256-CBC.
 fn encrypt(data: &[u8]) -> Vec<u8> {
   let cipher = Aes256Cbc::new(&KEY.into(), &IV.into());
   let block_size = 16;
@@ -41,6 +44,7 @@ fn encrypt(data: &[u8]) -> Vec<u8> {
   buffer
 }
 
+/// Decrypts the given data using AES-256-CBC.
 fn decrypt(data: &[u8]) -> Result<Vec<u8>, UnpadError> {
   let cipher = Aes256CbcDecryptor::new(&KEY.into(), &IV.into());
   let mut buffer = data.to_vec();
@@ -48,6 +52,7 @@ fn decrypt(data: &[u8]) -> Result<Vec<u8>, UnpadError> {
   Ok(pt.to_vec())
 }
 
+/// Gets the configuration file path.
 fn get_config_path() -> io::Result<PathBuf> {
   let mut config_dir = dirs::home_dir()
     .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Home directory not found"))?;
@@ -59,6 +64,7 @@ fn get_config_path() -> io::Result<PathBuf> {
   Ok(config_dir)
 }
 
+/// Saves the token to the configuration file.
 pub fn save_token(token: &str) -> io::Result<()> {
   let encrypted_token = encrypt(token.as_bytes());
   let config = Config {
@@ -71,6 +77,7 @@ pub fn save_token(token: &str) -> io::Result<()> {
   Ok(())
 }
 
+/// Loads the token from the configuration file.
 pub fn load_token() -> io::Result<String> {
   let config_path = get_config_path()?;
   let config_json = fs::read_to_string(config_path)?;
