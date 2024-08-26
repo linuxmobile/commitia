@@ -74,12 +74,14 @@ We welcome contributions to Commitia! Here are some ways you can help:
 
 ### To-Do List
 
-- [ ] **Improve Documentation**: Enhance the README.md and add more detailed documentation.
-- [ ] **Add Unit Tests**: Increase test coverage for the existing codebase.
+- [ ] **Improve Welcome & Banner Section**: Enhance the welcome message and banner for a better first impression.
+- [ ] **Work in 'Select Files'**: Implement the file selection feature for committing specific files.
+- [ ] **Generate AI Commit Message**: Implement the Google AI integration for generating commit messages.
 - [ ] **Enhance UI**: Improve the user interface for better user experience.
-- [ ] **Add More Slang**: Expand the list of Argentine slang used in commit messages.
+- [ ] **Add Unit Tests**: Increase test coverage for the existing codebase.
 - [ ] **Optimize Performance**: Profile and optimize the performance of the application.
 - [ ] **Bug Fixes**: Identify and fix bugs in the current implementation.
+- [ ] **Improve Documentation**: Enhance the README.md and add more detailed documentation.
 - [ ] **Feature Requests**: Suggest and implement new features.
 
 ### How to Contribute
