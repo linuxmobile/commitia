@@ -97,19 +97,24 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
   }
 
   // Main application loop
+
   app.is_token_set = true;
   app.staged_files = get_git_status_files().unwrap_or_else(|e| {
     eprintln!("Failed to get git status: {}", e);
     vec![]
   });
   app.input_mode = InputMode::SelectingFiles;
-  app.selected_index = 0;
+  app.select_first_file();
 
   loop {
-    terminal.draw(|f| draw_file_selection(f, &app, app.selected_index))?;
+    terminal.draw(|f| draw_file_selection(f, &app))?;
 
     if let Ok(Event::Input(key_event)) = events.next() {
-      if handle_input(&mut app, key_event.code, key_event.modifiers) {
+      if app.staged_files.is_empty() {
+        if key_event.code == KeyCode::Char('q') || key_event.code == KeyCode::Esc {
+          break;
+        }
+      } else if handle_input(&mut app, key_event.code, key_event.modifiers) {
         break;
       }
     }

@@ -32,4 +32,17 @@ impl App {
       file_diff: Vec::new(),
     }
   }
+  pub fn select_first_file(&mut self) {
+    if !self.staged_files.is_empty() {
+      self.selected_index = 0;
+      self.selected_file = Some(self.staged_files[0].0.clone());
+      self.update_file_diff();
+    }
+  }
+
+  pub fn update_file_diff(&mut self) {
+    if let Some(file) = &self.selected_file {
+      self.file_diff = crate::git::get_file_diff(file).unwrap_or_default();
+    }
+  }
 }
