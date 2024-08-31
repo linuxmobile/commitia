@@ -1,134 +1,31 @@
+use crate::{
+  config::save_token,
+  git::{get_file_diff, get_git_status_files},
+  ui::{
+    app::{App, InputMode},
+    events::{Event, Events},
+    screen::{draw_file_selection, draw_setup_screen, draw_splash_screen, draw_token_input},
+  },
+};
 use anyhow::Context;
-use asyncgit::sync::{
-    diff::DiffLineType,
-    status::StatusItemType,
-};
 use crossterm::{
-    event::{KeyCode, KeyModifiers},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+  event::{KeyCode, KeyModifiers},
+  execute,
+  terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::CrosstermBackend,
-    layout::{Alignment, Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
-    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Wrap},
-    Frame, Terminal,
-};
+use ratatui::{backend::CrosstermBackend, Terminal};
 use std::{
-    io,
-    time::{Duration, Instant},
+  io,
+  time::{Duration, Instant},
 };
-use tui_big_text::{BigTextBuilder, PixelSize};
 use webbrowser;
 
-use crate::{
-    config::save_token,
-    git::{get_file_diff, get_git_status_files},
-    ui::{
-        app::{App, InputMode},
-        events::{Event, Events},
-    },
-};
-
-fn top_left_rect(_percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-  Layout::default()
-    .direction(Direction::Vertical)
-    .constraints([Constraint::Percentage(percent_y), Constraint::Min(0)].as_ref())
-    .split(r)[0]
-}
-
-fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-  let popup_layout = Layout::default()
-    .direction(Direction::Vertical)
-    .constraints(
-      [
-        Constraint::Percentage((100 - percent_y) / 2),
-        Constraint::Percentage(percent_y),
-        Constraint::Percentage((100 - percent_y) / 2),
-      ]
-      .as_ref(),
-    )
-    .split(r);
-
-  Layout::default()
-    .direction(Direction::Horizontal)
-    .constraints(
-      [
-        Constraint::Percentage((100 - percent_x) / 2),
-        Constraint::Percentage(percent_x),
-        Constraint::Percentage((100 - percent_x) / 2),
-      ]
-      .as_ref(),
-    )
-    .split(popup_layout[1])[1]
-}
-
-fn show_file_selector(f: &mut Frame, files: &[(String, StatusItemType)], selected_index: usize) {
-  let chunks = Layout::default()
-    .direction(Direction::Vertical)
-    .constraints([Constraint::Percentage(100)].as_ref())
-    .split(f.area());
-
-  let items: Vec<ListItem> = files
-    .iter()
-    .enumerate()
-    .map(|(i, (path, status))| {
-      let style = if i == selected_index {
-        Style::default().fg(Color::Yellow)
-      } else {
-        Style::default().fg(Color::White)
-      };
-      let status_str = match status {
-        StatusItemType::Modified => " M ",
-        StatusItemType::New => "?? ",
-        StatusItemType::Deleted => " D ",
-        StatusItemType::Renamed => " R ",
-        StatusItemType::Typechange => " T ",
-        _ => "   ",
-      };
-      ListItem::new(format!("{} {}", status_str, path)).style(style)
-    })
-    .collect();
-  let files_list = List::new(items)
-    .block(Block::default().borders(Borders::ALL).title("Select Files"))
-    .style(Style::default().fg(Color::White));
-
-  f.render_widget(files_list, chunks[0]);
-}
-
-fn show_file_diff(f: &mut Frame, diff: &[(DiffLineType, String)]) {
-  let chunks = Layout::default()
-    .direction(Direction::Vertical)
-    .constraints([Constraint::Percentage(100)].as_ref())
-    .split(f.area());
-
-  let items: Vec<ListItem> = diff
-    .iter()
-    .map(|(line_type, line)| {
-      let style = match line_type {
-        DiffLineType::Add => Style::default().fg(Color::Green),
-        DiffLineType::Delete => Style::default().fg(Color::Red),
-        DiffLineType::Header => Style::default().fg(Color::Cyan),
-        _ => Style::default().fg(Color::White),
-      };
-      ListItem::new(line.as_str()).style(style)
-    })
-    .collect();
-
-  let diff_list = List::new(items)
-    .block(Block::default().borders(Borders::ALL).title("File Diff"))
-    .style(Style::default().fg(Color::White));
-
-  f.render_widget(diff_list, chunks[0]);
-}
-
 pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
-  enable_raw_mode().with_context(|| "Failed to enable raw mode")?;
+  enable_raw_mode().context("Failed to enable raw mode")?;
   let mut stdout = io::stdout();
-  execute!(stdout, EnterAlternateScreen).with_context(|| "Failed to enter alternate screen")?;
+  execute!(stdout, EnterAlternateScreen).context("Failed to enter alternate screen")?;
   let backend = CrosstermBackend::new(stdout);
-  let mut terminal = Terminal::new(backend).with_context(|| "Failed to create terminal")?;
+  let mut terminal = Terminal::new(backend).context("Failed to create terminal")?;
 
   let mut app = App::new();
   let events = Events::new(Duration::from_millis(200));
@@ -137,266 +34,115 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
   let additional_message = "This is the initial setup! 🚀\n\
         To get started with Commitia, you'll need to provide your Google AI token.";
 
+  // Show splash screen
   let start_time = Instant::now();
   let splash_duration = Duration::from_secs(3);
-
   while start_time.elapsed() < splash_duration {
     let progress = start_time.elapsed().as_secs_f64() / splash_duration.as_secs_f64();
-    terminal
-      .draw(|frame| {
-        let size = frame.area();
-        let area = centered_rect(80, 50, size);
-        let big_text = BigTextBuilder::default()
-          .pixel_size(PixelSize::Full)
-          .style(Style::default().fg(Color::White))
-          .lines(vec![welcome_message.into()])
-          .build();
-        frame.render_widget(big_text, area);
-
-        let gauge_area = Rect {
-          x: area.x,
-          y: area.y + area.height + 1,
-          width: area.width,
-          height: 3,
-        };
-        let gauge = Gauge::default()
-          .block(Block::default().borders(Borders::ALL).title("Loading"))
-          .gauge_style(
-            Style::default()
-              .fg(Color::White)
-              .bg(Color::Black)
-              .add_modifier(Modifier::BOLD),
-          )
-          .percent((progress * 100.0) as u16);
-        frame.render_widget(gauge, gauge_area);
-      })
-      .with_context(|| "Failed to draw splash screen")?;
+    terminal.draw(|f| draw_splash_screen(f, welcome_message, progress))?;
     std::thread::sleep(Duration::from_millis(100));
   }
 
   if initial_setup {
+    // Initial setup flow
     loop {
-      terminal
-        .draw(|f| {
-          let size = f.area();
-          let area = centered_rect(80, 50, size);
+      terminal.draw(|f| draw_setup_screen(f, additional_message))?;
 
-          let additional_paragraph = Paragraph::new(additional_message)
-            .style(Style::default().fg(Color::White))
-            .block(
-              Block::default()
-                .borders(Borders::ALL)
-                .title("Welcome to Commitia"),
-            )
-            .alignment(Alignment::Left)
-            .wrap(Wrap { trim: true });
-
-          f.render_widget(additional_paragraph, area);
-
-          let options_area = Rect {
-            x: area.x,
-            y: area.y + area.height + 1,
-            width: area.width,
-            height: 3,
-          };
-
-          let options_paragraph = Paragraph::new("Press 'c' to continue or 'q' to quit.")
-            .style(
-              Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-            )
-            .alignment(Alignment::Center);
-
-          f.render_widget(options_paragraph, options_area);
-        })
-        .with_context(|| "Failed to draw setup screen")?;
-
-      match events.next() {
-        Ok(Event::Input(key_event)) => match key_event.code {
-          KeyCode::Char('c') => match webbrowser::open("https://aistudio.google.com/app/apikey") {
-            Ok(_) => {
+      if let Ok(Event::Input(key_event)) = events.next() {
+        match key_event.code {
+          KeyCode::Char('c') => {
+            if webbrowser::open("https://aistudio.google.com/app/apikey").is_ok() {
               app.input_mode = InputMode::Editing;
               break;
             }
-            Err(e) => {
-              eprintln!("Failed to open the web browser: {}", e);
-            }
-          },
-          KeyCode::Char('q') => {
-            disable_raw_mode()?;
-            execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-            terminal.show_cursor()?;
-            return Ok(());
           }
+          KeyCode::Char('q') => return Ok(()),
           _ => {}
-        },
-        Ok(Event::Tick) => {}
-        Err(e) => {
-          eprintln!("Error: {:?}", e);
-          break;
         }
       }
     }
 
+    // Token input loop
     loop {
-      terminal
-        .draw(|f| {
-          let size = f.area();
-          let area = top_left_rect(60, 20, size);
+      terminal.draw(|f| draw_token_input(f, &app))?;
 
-          if !app.is_token_set {
-            let input = Paragraph::new(app.token.as_ref() as &str)
-              .style(match app.input_mode {
-                InputMode::Normal => Style::default(),
-                InputMode::Editing => Style::default().fg(Color::Yellow),
-                InputMode::SelectingFiles => Style::default().fg(Color::Cyan),
-              })
-              .block(
-                Block::default()
-                  .borders(Borders::ALL)
-                  .title("Enter Google AI API token"),
-              )
-              .alignment(Alignment::Left);
-
-            f.render_widget(input, area);
-          } else if app.ask_select_files {
-            let question = Paragraph::new("Do you want to select the files to commit? (y/n)")
-              .style(Style::default().fg(Color::White))
-              .block(Block::default().borders(Borders::ALL).title("Select Files"))
-              .alignment(Alignment::Left)
-              .wrap(Wrap { trim: true });
-
-            f.render_widget(question, area);
-          } else if app.input_mode == InputMode::SelectingFiles {
-            show_file_selector(f, &app.staged_files, 0);
-          }
-        })
-        .with_context(|| "Failed to draw input screen")?;
-
-      match events.next() {
-        Ok(Event::Input(key_event)) => {
-          if app.input_mode == InputMode::Editing {
-            match key_event.code {
-              KeyCode::Char(c) => {
-                app.token.push(c);
-              }
-              KeyCode::Backspace => {
-                app.token.pop();
-              }
-              KeyCode::Enter => {
-                save_token(&app.token).with_context(|| "Failed to save token")?;
-                app.is_token_set = true;
-                app.input_mode = InputMode::Normal;
-                app.ask_select_files = true;
-              }
-              KeyCode::Esc => {
-                app.input_mode = InputMode::Normal;
-              }
-              _ => {}
+      if let Ok(Event::Input(key_event)) = events.next() {
+        match app.input_mode {
+          InputMode::Editing => match key_event.code {
+            KeyCode::Char(c) => app.token.push(c),
+            KeyCode::Backspace => {
+              app.token.pop();
             }
-          } else if app.ask_select_files {
-            match key_event.code {
-              KeyCode::Char('y') => {
-                app.input_mode = InputMode::SelectingFiles;
-                app.ask_select_files = false;
-                app.staged_files = get_git_status_files().unwrap_or_else(|e| {
-                  eprintln!("Failed to get git status: {}", e);
-                  vec![]
-                });
-              }
-              _ => {}
+            KeyCode::Enter => {
+              save_token(&app.token).context("Failed to save token")?;
+              app.is_token_set = true;
+              app.input_mode = InputMode::Normal;
+              break;
             }
-          } else {
-            match key_event.code {
-              KeyCode::Esc | KeyCode::Char('c')
-                if key_event.modifiers.contains(KeyModifiers::CONTROL) =>
-              {
-                break;
-              }
-              _ => {}
+            KeyCode::Esc => app.input_mode = InputMode::Normal,
+            _ => {}
+          },
+          _ => {
+            if key_event.code == KeyCode::Esc
+              || (key_event.code == KeyCode::Char('c')
+                && key_event.modifiers.contains(KeyModifiers::CONTROL))
+            {
+              break;
             }
           }
-        }
-        Ok(Event::Tick) => {}
-        Err(e) => {
-          eprintln!("Error: {:?}", e);
-          break;
-        }
-      }
-    }
-  } else {
-    app.is_token_set = true;
-    app.staged_files = get_git_status_files().unwrap_or_else(|e| {
-      eprintln!("Failed to get git status: {}", e);
-      vec![]
-    });
-    app.input_mode = InputMode::SelectingFiles;
-    let mut selected_index = 0;
-
-    loop {
-      terminal
-        .draw(|f| {
-          let size = f.area();
-          let _chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
-            .split(size);
-
-          show_file_selector(f, &app.staged_files, selected_index);
-
-          if let Some(_selected_file) = &app.selected_file {
-            show_file_diff(f, &app.file_diff);
-          }
-        })
-        .with_context(|| "Failed to draw file selector screen")?;
-
-      match events.next() {
-        Ok(Event::Input(key_event)) => {
-          if app.input_mode == InputMode::SelectingFiles {
-            match key_event.code {
-              KeyCode::Char('j') => {
-                // Move selection down
-                if selected_index < app.staged_files.len() - 1 {
-                  selected_index += 1;
-                }
-              }
-              KeyCode::Char('k') => {
-                // Move selection up
-                if selected_index > 0 {
-                  selected_index -= 1;
-                }
-              }
-              KeyCode::Enter => {
-                if let Some((path, _)) = app.staged_files.get(selected_index) {
-                  app.selected_file = Some(path.clone());
-                  app.file_diff = get_file_diff(path).unwrap_or_else(|_| vec![]);
-                }
-              }
-              KeyCode::Esc | KeyCode::Char('c')
-                if key_event.modifiers.contains(KeyModifiers::CONTROL) =>
-              {
-                break;
-              }
-              _ => {}
-            }
-          }
-        }
-        Ok(Event::Tick) => {}
-        Err(e) => {
-          eprintln!("Error: {:?}", e);
-          break;
         }
       }
     }
   }
 
-  disable_raw_mode().with_context(|| "Failed to disable raw mode")?;
+  // Main application loop
+  app.is_token_set = true;
+  app.staged_files = get_git_status_files().unwrap_or_else(|e| {
+    eprintln!("Failed to get git status: {}", e);
+    vec![]
+  });
+  app.input_mode = InputMode::SelectingFiles;
+  let mut selected_index = 0;
+
+  loop {
+    terminal.draw(|f| draw_file_selection(f, &app, selected_index))?;
+
+    if let Ok(Event::Input(key_event)) = events.next() {
+      match app.input_mode {
+        InputMode::SelectingFiles => match key_event.code {
+          KeyCode::Char('j') => {
+            if selected_index < app.staged_files.len() - 1 {
+              selected_index += 1;
+            }
+          }
+          KeyCode::Char('k') => {
+            if selected_index > 0 {
+              selected_index -= 1;
+            }
+          }
+          KeyCode::Enter => {
+            if let Some((path, _)) = app.staged_files.get(selected_index) {
+              app.selected_file = Some(path.clone());
+              app.file_diff = get_file_diff(path).unwrap_or_default();
+            }
+          }
+          KeyCode::Esc | KeyCode::Char('c')
+            if key_event.modifiers.contains(KeyModifiers::CONTROL) =>
+          {
+            break
+          }
+          _ => {}
+        },
+        _ => {}
+      }
+    }
+  }
+
+  // Cleanup
+  disable_raw_mode().context("Failed to disable raw mode")?;
   execute!(terminal.backend_mut(), LeaveAlternateScreen)
-    .with_context(|| "Failed to leave alternate screen")?;
-  terminal
-    .show_cursor()
-    .with_context(|| "Failed to show cursor")?;
+    .context("Failed to leave alternate screen")?;
+  terminal.show_cursor().context("Failed to show cursor")?;
 
   Ok(())
 }
