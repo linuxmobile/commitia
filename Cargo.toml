@@ -16,6 +16,7 @@ include = ["assets/*"]
 
 [dependencies]
 aes = "0.8.4"
+anyhow = "1.0.86"
 asyncgit = "0.26.3"
 block-padding = "0.3.3"
 cbc = "0.1.2"
@@ -33,3 +34,15 @@ tui-big-text = "0.6.0"
 tui-prompts = "0.4.0"
 tui-widgets = "0.3.0"
 webbrowser = "1.0.1"
+
+[profile.release]
+lto = true
+opt-level = 'z'
+codegen-units = 1
+strip = "debuginfo"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."ratatui"]
+opt-level = 3
