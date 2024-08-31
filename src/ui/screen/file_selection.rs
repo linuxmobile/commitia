@@ -34,16 +34,17 @@ pub fn draw_file_selection(f: &mut Frame, app: &App) {
     );
   }
 
-  if let Some(_) = &app.selected_file {
-    FileDiff::render(
-      f,
-      main_chunks[1],
-      &app.file_diff,
-      app.active_column == ActiveColumn::Main,
-    );
+  if let Some(selected_index) = app.selected_file {
+    if let Some((file, _)) = app.staged_files.get(selected_index) {
+      FileDiff::render(
+        f,
+        main_chunks[1],
+        &app.file_diff,
+        app.active_column == ActiveColumn::Main,
+      );
+    }
   }
 
-  // Add hint at the bottom
   let hint = Paragraph::new("Tab: Switch columns | q: Quit")
     .style(Style::default().fg(Color::Gray))
     .alignment(ratatui::layout::Alignment::Center);

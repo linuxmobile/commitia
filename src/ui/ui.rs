@@ -35,7 +35,6 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
   let additional_message = "This is the initial setup! 🚀\n\
         To get started with Commitia, you'll need to provide your Google AI token.";
 
-  // Show splash screen
   let start_time = Instant::now();
   let splash_duration = Duration::from_secs(3);
   while start_time.elapsed() < splash_duration {
@@ -45,7 +44,6 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
   }
 
   if initial_setup {
-    // Initial setup flow
     loop {
       terminal.draw(|f| draw_setup_screen(f, additional_message))?;
 
@@ -63,7 +61,6 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
       }
     }
 
-    // Token input loop
     loop {
       terminal.draw(|f| draw_token_input(f, &app))?;
 
@@ -96,8 +93,6 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
     }
   }
 
-  // Main application loop
-
   app.is_token_set = true;
   app.staged_files = get_git_status_files().unwrap_or_else(|e| {
     eprintln!("Failed to get git status: {}", e);
@@ -120,7 +115,6 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
     }
   }
 
-  // Cleanup
   disable_raw_mode().context("Failed to disable raw mode")?;
   execute!(terminal.backend_mut(), LeaveAlternateScreen)
     .context("Failed to leave alternate screen")?;

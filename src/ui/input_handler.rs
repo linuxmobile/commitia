@@ -14,14 +14,14 @@ fn handle_selecting_files(app: &mut App, key_code: KeyCode, modifiers: KeyModifi
     KeyCode::Char('j') => {
       if app.selected_index < app.staged_files.len() - 1 {
         app.selected_index += 1;
-        app.selected_file = Some(app.staged_files[app.selected_index].0.clone());
+        app.selected_file = Some(app.selected_index);
         app.update_file_diff();
       }
     }
     KeyCode::Char('k') => {
       if app.selected_index > 0 {
         app.selected_index -= 1;
-        app.selected_file = Some(app.staged_files[app.selected_index].0.clone());
+        app.selected_file = Some(app.selected_index);
         app.update_file_diff();
       }
     }
