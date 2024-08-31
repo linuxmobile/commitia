@@ -1,4 +1,4 @@
-<img src="https://i.ibb.co/X7LR5J7/banner2.png">
+<img src="/assets/commitia.png">
 
 # Commitia
 
