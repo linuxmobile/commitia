@@ -1,5 +1,6 @@
 pub mod app;
 pub mod events;
+pub mod input_handler;
 pub mod screen;
 pub mod ui;
 pub mod utils;

@@ -1,9 +1,10 @@
 use crate::{
   config::save_token,
-  git::{get_file_diff, get_git_status_files},
+  git::get_git_status_files,
   ui::{
     app::{App, InputMode},
     events::{Event, Events},
+    input_handler::handle_input,
     screen::{draw_file_selection, draw_setup_screen, draw_splash_screen, draw_token_input},
   },
 };
@@ -102,38 +103,14 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
     vec![]
   });
   app.input_mode = InputMode::SelectingFiles;
-  let mut selected_index = 0;
+  app.selected_index = 0;
 
   loop {
-    terminal.draw(|f| draw_file_selection(f, &app, selected_index))?;
+    terminal.draw(|f| draw_file_selection(f, &app, app.selected_index))?;
 
     if let Ok(Event::Input(key_event)) = events.next() {
-      match app.input_mode {
-        InputMode::SelectingFiles => match key_event.code {
-          KeyCode::Char('j') => {
-            if selected_index < app.staged_files.len() - 1 {
-              selected_index += 1;
-            }
-          }
-          KeyCode::Char('k') => {
-            if selected_index > 0 {
-              selected_index -= 1;
-            }
-          }
-          KeyCode::Enter => {
-            if let Some((path, _)) = app.staged_files.get(selected_index) {
-              app.selected_file = Some(path.clone());
-              app.file_diff = get_file_diff(path).unwrap_or_default();
-            }
-          }
-          KeyCode::Esc | KeyCode::Char('c')
-            if key_event.modifiers.contains(KeyModifiers::CONTROL) =>
-          {
-            break
-          }
-          _ => {}
-        },
-        _ => {}
+      if handle_input(&mut app, key_event.code, key_event.modifiers) {
+        break;
       }
     }
   }
