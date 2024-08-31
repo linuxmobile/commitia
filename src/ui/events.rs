@@ -10,14 +10,11 @@ pub enum Event<I> {
 
 pub struct Events {
   rx: mpsc::Receiver<Event<KeyEvent>>,
-  _tx: mpsc::Sender<Event<KeyEvent>>,
 }
 
 impl Events {
-  pub fn new(tick_rate: Duration) -> Events {
+  pub fn new(tick_rate: Duration) -> Self {
     let (tx, rx) = mpsc::channel();
-    let event_tx = tx.clone();
-    let tick_tx = tx.clone();
 
     thread::spawn(move || {
       let mut last_tick = Instant::now();
@@ -28,19 +25,22 @@ impl Events {
 
         if event::poll(timeout).unwrap() {
           if let CEvent::Key(key) = event::read().unwrap() {
-            event_tx.send(Event::Input(key)).unwrap();
+            if tx.send(Event::Input(key)).is_err() {
+              return;
+            }
           }
         }
 
         if last_tick.elapsed() >= tick_rate {
-          if let Ok(_) = tick_tx.send(Event::Tick) {
-            last_tick = Instant::now();
+          if tx.send(Event::Tick).is_err() {
+            return;
           }
+          last_tick = Instant::now();
         }
       }
     });
 
-    Events { rx, _tx: tx }
+    Events { rx }
   }
 
   pub fn next(&self) -> Result<Event<KeyEvent>, mpsc::RecvError> {
