@@ -17,6 +17,7 @@ pub enum ActiveColumn {
 pub struct App {
   pub active_column: ActiveColumn,
   pub ask_select_files: bool,
+  pub diff_scroll: usize,
   pub file_diff: Vec<(DiffLineType, String)>,
   pub input_mode: InputMode,
   pub is_token_set: bool,
@@ -31,6 +32,7 @@ impl App {
     App {
       active_column: ActiveColumn::Sidebar,
       ask_select_files: false,
+      diff_scroll: 0,
       file_diff: Vec::new(),
       input_mode: InputMode::Normal,
       is_token_set: false,
@@ -62,5 +64,10 @@ impl App {
       ActiveColumn::Sidebar => ActiveColumn::Main,
       ActiveColumn::Main => ActiveColumn::Sidebar,
     };
+  }
+
+  pub fn scroll_diff(&mut self, delta: isize) {
+    let new_scroll = self.diff_scroll as isize + delta;
+    self.diff_scroll = new_scroll.max(0) as usize;
   }
 }

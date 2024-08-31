@@ -2,14 +2,20 @@ use asyncgit::sync::diff::DiffLineType;
 use ratatui::{
   layout::Rect,
   style::{Color, Style},
-  widgets::{Block, Borders, List, ListItem},
+  widgets::{Block, Borders, List, ListItem, ListState},
   Frame,
 };
 
 pub struct FileDiff;
 
 impl FileDiff {
-  pub fn render(f: &mut Frame, area: Rect, diff: &[(DiffLineType, String)], is_active: bool) {
+  pub fn render(
+    f: &mut Frame,
+    area: Rect,
+    diff: &[(DiffLineType, String)],
+    is_active: bool,
+    scroll: usize,
+  ) {
     let items: Vec<ListItem> = diff
       .iter()
       .map(|(line_type, line)| {
@@ -25,12 +31,16 @@ impl FileDiff {
 
     let diff_list = List::new(items)
       .block(Block::default().borders(Borders::ALL).title("File Diff"))
+      .highlight_style(Style::default().bg(Color::DarkGray))
       .style(Style::default().fg(if is_active {
         Color::Yellow
       } else {
         Color::White
       }));
 
-    f.render_widget(diff_list, area);
+    let mut state = ListState::default();
+    state.select(Some(scroll.min(diff.len().saturating_sub(1))));
+
+    f.render_stateful_widget(diff_list, area, &mut state);
   }
 }

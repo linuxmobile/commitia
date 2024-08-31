@@ -10,7 +10,7 @@ use crate::{
 };
 use anyhow::Context;
 use crossterm::{
-  event::{KeyCode, KeyModifiers},
+  event::KeyCode,
   execute,
   terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -55,7 +55,7 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
               break;
             }
           }
-          KeyCode::Char('q') => return Ok(()),
+          KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
           _ => {}
         }
       }
@@ -65,6 +65,9 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
       terminal.draw(|f| draw_token_input(f, &app))?;
 
       if let Ok(Event::Input(key_event)) = events.next() {
+        if key_event.code == KeyCode::Char('q') || key_event.code == KeyCode::Esc {
+          return Ok(());
+        }
         match app.input_mode {
           InputMode::Editing => match key_event.code {
             KeyCode::Char(c) => app.token.push(c),
@@ -77,17 +80,9 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
               app.input_mode = InputMode::Normal;
               break;
             }
-            KeyCode::Esc => app.input_mode = InputMode::Normal,
             _ => {}
           },
-          _ => {
-            if key_event.code == KeyCode::Esc
-              || (key_event.code == KeyCode::Char('c')
-                && key_event.modifiers.contains(KeyModifiers::CONTROL))
-            {
-              break;
-            }
-          }
+          _ => {}
         }
       }
     }
@@ -105,11 +100,7 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
     terminal.draw(|f| draw_file_selection(f, &app))?;
 
     if let Ok(Event::Input(key_event)) = events.next() {
-      if app.staged_files.is_empty() {
-        if key_event.code == KeyCode::Char('q') || key_event.code == KeyCode::Esc {
-          break;
-        }
-      } else if handle_input(&mut app, key_event.code, key_event.modifiers) {
+      if handle_input(&mut app, key_event.code, key_event.modifiers) {
         break;
       }
     }

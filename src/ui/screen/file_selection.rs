@@ -35,12 +35,13 @@ pub fn draw_file_selection(f: &mut Frame, app: &App) {
   }
 
   if let Some(selected_index) = app.selected_file {
-    if let Some((file, _)) = app.staged_files.get(selected_index) {
+    if let Some((_, _)) = app.staged_files.get(selected_index) {
       FileDiff::render(
         f,
         main_chunks[1],
         &app.file_diff,
         app.active_column == ActiveColumn::Main,
+        app.diff_scroll,
       );
     }
   }
