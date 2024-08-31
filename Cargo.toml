@@ -12,7 +12,6 @@ readme = "README.md"
 license = "MIT"
 categories = ["command-line-utilities"]
 keywords = ["git", "commit", "cli", "commitizen", "conventional-commits"]
-include = ["assets/*"]
 
 [dependencies]
 aes = "0.8.4"
