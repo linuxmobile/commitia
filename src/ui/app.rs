@@ -8,28 +8,36 @@ pub enum InputMode {
   SelectingFiles,
 }
 
+#[derive(PartialEq)]
+pub enum ActiveColumn {
+  Sidebar,
+  Main,
+}
+
 pub struct App {
-  pub token: String,
+  pub active_column: ActiveColumn,
+  pub ask_select_files: bool,
+  pub file_diff: Vec<(DiffLineType, String)>,
   pub input_mode: InputMode,
   pub is_token_set: bool,
-  pub ask_select_files: bool,
-  pub staged_files: Vec<(String, StatusItemType)>,
   pub selected_file: Option<String>,
   pub selected_index: usize,
-  pub file_diff: Vec<(DiffLineType, String)>,
+  pub staged_files: Vec<(String, StatusItemType)>,
+  pub token: String,
 }
 
 impl App {
   pub fn new() -> App {
     App {
-      token: String::new(),
+      active_column: ActiveColumn::Sidebar,
+      ask_select_files: false,
+      file_diff: Vec::new(),
       input_mode: InputMode::Normal,
       is_token_set: false,
-      ask_select_files: false,
-      staged_files: Vec::new(),
       selected_file: None,
       selected_index: 0,
-      file_diff: Vec::new(),
+      staged_files: Vec::new(),
+      token: String::new(),
     }
   }
   pub fn select_first_file(&mut self) {
@@ -44,5 +52,12 @@ impl App {
     if let Some(file) = &self.selected_file {
       self.file_diff = crate::git::get_file_diff(file).unwrap_or_default();
     }
+  }
+
+  pub fn toggle_active_column(&mut self) {
+    self.active_column = match self.active_column {
+      ActiveColumn::Sidebar => ActiveColumn::Main,
+      ActiveColumn::Main => ActiveColumn::Sidebar,
+    };
   }
 }

@@ -1,4 +1,4 @@
-use crate::ui::app::App;
+use crate::ui::app::{ActiveColumn, App};
 use crate::ui::widgets::{FileDiff, FileSelector};
 use ratatui::{
   layout::{Constraint, Direction, Layout},
@@ -10,20 +10,42 @@ use ratatui::{
 pub fn draw_file_selection(f: &mut Frame, app: &App) {
   let size = f.area();
   let chunks = Layout::default()
+    .direction(Direction::Vertical)
+    .constraints([Constraint::Min(0), Constraint::Length(1)])
+    .split(size);
+
+  let main_chunks = Layout::default()
     .direction(Direction::Horizontal)
     .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
-    .split(size);
+    .split(chunks[0]);
 
   if app.staged_files.is_empty() {
     let message = Paragraph::new("There is nothing to commit. Working tree clean.")
       .style(Style::default().fg(Color::Yellow))
       .block(Block::default().borders(Borders::ALL).title("Git Status"));
-    f.render_widget(message, chunks[0]);
+    f.render_widget(message, main_chunks[0]);
   } else {
-    FileSelector::render(f, chunks[0], &app.staged_files, app.selected_index);
+    FileSelector::render(
+      f,
+      main_chunks[0],
+      &app.staged_files,
+      app.selected_index,
+      app.active_column == ActiveColumn::Sidebar,
+    );
   }
 
   if let Some(_) = &app.selected_file {
-    FileDiff::render(f, chunks[1], &app.file_diff);
+    FileDiff::render(
+      f,
+      main_chunks[1],
+      &app.file_diff,
+      app.active_column == ActiveColumn::Main,
+    );
   }
+
+  // Add hint at the bottom
+  let hint = Paragraph::new("Tab: Switch columns | q: Quit")
+    .style(Style::default().fg(Color::Gray))
+    .alignment(ratatui::layout::Alignment::Center);
+  f.render_widget(hint, chunks[1]);
 }

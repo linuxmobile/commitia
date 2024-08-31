@@ -14,6 +14,7 @@ impl FileSelector {
     area: Rect,
     files: &[(String, StatusItemType)],
     selected_index: usize,
+    is_active: bool,
   ) {
     let items: Vec<ListItem> = files
       .iter()
@@ -38,7 +39,11 @@ impl FileSelector {
 
     let files_list = List::new(items)
       .block(Block::default().borders(Borders::ALL).title("Select Files"))
-      .style(Style::default().fg(Color::White));
+      .style(Style::default().fg(if is_active {
+        Color::Yellow
+      } else {
+        Color::White
+      }));
 
     f.render_widget(files_list, area);
   }

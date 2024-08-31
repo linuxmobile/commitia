@@ -14,21 +14,23 @@ fn handle_selecting_files(app: &mut App, key_code: KeyCode, modifiers: KeyModifi
     KeyCode::Char('j') => {
       if app.selected_index < app.staged_files.len() - 1 {
         app.selected_index += 1;
+        app.selected_file = Some(app.staged_files[app.selected_index].0.clone());
+        app.update_file_diff();
       }
     }
     KeyCode::Char('k') => {
       if app.selected_index > 0 {
         app.selected_index -= 1;
+        app.selected_file = Some(app.staged_files[app.selected_index].0.clone());
+        app.update_file_diff();
       }
     }
-    KeyCode::Enter => {
-      if let Some((path, _)) = app.staged_files.get(app.selected_index) {
-        app.selected_file = Some(path.clone());
-        app.file_diff = crate::git::get_file_diff(path).unwrap_or_default();
-      }
-    }
+    KeyCode::Enter => {}
     KeyCode::Esc | KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => {
       return true;
+    }
+    KeyCode::Tab => {
+      app.toggle_active_column();
     }
     _ => {}
   }
