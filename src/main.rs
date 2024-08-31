@@ -2,17 +2,15 @@ mod config;
 mod git;
 mod ui;
 
+use anyhow::{Context, Result};
 use config::config_exists;
 use ui::run_ui;
 
-fn main() {
+fn main() -> Result<()> {
   if !config_exists() {
-    if let Err(e) = run_ui(true) {
-      eprintln!("Error: {}", e);
-    }
+    run_ui(true).context("Failed to run UI for initial setup")?;
   } else {
-    if let Err(e) = run_ui(false) {
-      eprintln!("Error: {}", e);
-    }
+    run_ui(false).context("Failed to run UI for normal operation")?;
   }
+  Ok(())
 }

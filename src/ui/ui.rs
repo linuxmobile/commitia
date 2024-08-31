@@ -1,25 +1,35 @@
-use crate::config::save_token;
-use crate::git::{get_file_diff, get_git_status_files};
-use crate::ui::app::{App, InputMode};
-use crate::ui::events::{Event, Events};
-use asyncgit::sync::diff::DiffLineType;
-use asyncgit::sync::status::StatusItemType;
+use anyhow::Context;
+use asyncgit::sync::{
+    diff::DiffLineType,
+    status::StatusItemType,
+};
 use crossterm::{
-  event::{KeyCode, KeyModifiers},
-  execute,
-  terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    event::{KeyCode, KeyModifiers},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{
-  backend::CrosstermBackend,
-  layout::{Alignment, Constraint, Direction, Layout, Rect},
-  style::{Color, Modifier, Style},
-  widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Wrap},
-  Frame, Terminal,
+    backend::CrosstermBackend,
+    layout::{Alignment, Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Wrap},
+    Frame, Terminal,
 };
-use std::io;
-use std::time::{Duration, Instant};
+use std::{
+    io,
+    time::{Duration, Instant},
+};
 use tui_big_text::{BigTextBuilder, PixelSize};
 use webbrowser;
+
+use crate::{
+    config::save_token,
+    git::{get_file_diff, get_git_status_files},
+    ui::{
+        app::{App, InputMode},
+        events::{Event, Events},
+    },
+};
 
 fn top_left_rect(_percent_x: u16, percent_y: u16, r: Rect) -> Rect {
   Layout::default()
@@ -113,12 +123,12 @@ fn show_file_diff(f: &mut Frame, diff: &[(DiffLineType, String)]) {
   f.render_widget(diff_list, chunks[0]);
 }
 
-pub fn run_ui(initial_setup: bool) -> Result<(), io::Error> {
-  enable_raw_mode()?;
+pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
+  enable_raw_mode().with_context(|| "Failed to enable raw mode")?;
   let mut stdout = io::stdout();
-  execute!(stdout, EnterAlternateScreen)?;
+  execute!(stdout, EnterAlternateScreen).with_context(|| "Failed to enter alternate screen")?;
   let backend = CrosstermBackend::new(stdout);
-  let mut terminal = Terminal::new(backend)?;
+  let mut terminal = Terminal::new(backend).with_context(|| "Failed to create terminal")?;
 
   let mut app = App::new();
   let events = Events::new(Duration::from_millis(200));
@@ -128,75 +138,79 @@ pub fn run_ui(initial_setup: bool) -> Result<(), io::Error> {
         To get started with Commitia, you'll need to provide your Google AI token.";
 
   let start_time = Instant::now();
-  let splash_duration = Duration::from_secs(4);
+  let splash_duration = Duration::from_secs(3);
 
   while start_time.elapsed() < splash_duration {
     let progress = start_time.elapsed().as_secs_f64() / splash_duration.as_secs_f64();
-    terminal.draw(|frame| {
-      let size = frame.area();
-      let area = centered_rect(80, 50, size);
-      let big_text = BigTextBuilder::default()
-        .pixel_size(PixelSize::Full)
-        .style(Style::default().fg(Color::White))
-        .lines(vec![welcome_message.into()])
-        .build();
-      frame.render_widget(big_text, area);
-
-      let gauge_area = Rect {
-        x: area.x,
-        y: area.y + area.height + 1,
-        width: area.width,
-        height: 3,
-      };
-      let gauge = Gauge::default()
-        .block(Block::default().borders(Borders::ALL).title("Loading"))
-        .gauge_style(
-          Style::default()
-            .fg(Color::White)
-            .bg(Color::Black)
-            .add_modifier(Modifier::BOLD),
-        )
-        .percent((progress * 100.0) as u16);
-      frame.render_widget(gauge, gauge_area);
-    })?;
-    std::thread::sleep(Duration::from_millis(100));
-  }
-
-  if initial_setup {
-    loop {
-      terminal.draw(|f| {
-        let size = f.area();
+    terminal
+      .draw(|frame| {
+        let size = frame.area();
         let area = centered_rect(80, 50, size);
-
-        let additional_paragraph = Paragraph::new(additional_message)
+        let big_text = BigTextBuilder::default()
+          .pixel_size(PixelSize::Full)
           .style(Style::default().fg(Color::White))
-          .block(
-            Block::default()
-              .borders(Borders::ALL)
-              .title("Welcome to Commitia"),
-          )
-          .alignment(Alignment::Left)
-          .wrap(Wrap { trim: true });
+          .lines(vec![welcome_message.into()])
+          .build();
+        frame.render_widget(big_text, area);
 
-        f.render_widget(additional_paragraph, area);
-
-        let options_area = Rect {
+        let gauge_area = Rect {
           x: area.x,
           y: area.y + area.height + 1,
           width: area.width,
           height: 3,
         };
-
-        let options_paragraph = Paragraph::new("Press 'c' to continue or 'q' to quit.")
-          .style(
+        let gauge = Gauge::default()
+          .block(Block::default().borders(Borders::ALL).title("Loading"))
+          .gauge_style(
             Style::default()
-              .fg(Color::Yellow)
+              .fg(Color::White)
+              .bg(Color::Black)
               .add_modifier(Modifier::BOLD),
           )
-          .alignment(Alignment::Center);
+          .percent((progress * 100.0) as u16);
+        frame.render_widget(gauge, gauge_area);
+      })
+      .with_context(|| "Failed to draw splash screen")?;
+    std::thread::sleep(Duration::from_millis(100));
+  }
 
-        f.render_widget(options_paragraph, options_area);
-      })?;
+  if initial_setup {
+    loop {
+      terminal
+        .draw(|f| {
+          let size = f.area();
+          let area = centered_rect(80, 50, size);
+
+          let additional_paragraph = Paragraph::new(additional_message)
+            .style(Style::default().fg(Color::White))
+            .block(
+              Block::default()
+                .borders(Borders::ALL)
+                .title("Welcome to Commitia"),
+            )
+            .alignment(Alignment::Left)
+            .wrap(Wrap { trim: true });
+
+          f.render_widget(additional_paragraph, area);
+
+          let options_area = Rect {
+            x: area.x,
+            y: area.y + area.height + 1,
+            width: area.width,
+            height: 3,
+          };
+
+          let options_paragraph = Paragraph::new("Press 'c' to continue or 'q' to quit.")
+            .style(
+              Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+            )
+            .alignment(Alignment::Center);
+
+          f.render_widget(options_paragraph, options_area);
+        })
+        .with_context(|| "Failed to draw setup screen")?;
 
       match events.next() {
         Ok(Event::Input(key_event)) => match key_event.code {
@@ -226,37 +240,39 @@ pub fn run_ui(initial_setup: bool) -> Result<(), io::Error> {
     }
 
     loop {
-      terminal.draw(|f| {
-        let size = f.area();
-        let area = top_left_rect(60, 20, size);
+      terminal
+        .draw(|f| {
+          let size = f.area();
+          let area = top_left_rect(60, 20, size);
 
-        if !app.is_token_set {
-          let input = Paragraph::new(app.token.as_ref() as &str)
-            .style(match app.input_mode {
-              InputMode::Normal => Style::default(),
-              InputMode::Editing => Style::default().fg(Color::Yellow),
-              InputMode::SelectingFiles => Style::default().fg(Color::Cyan),
-            })
-            .block(
-              Block::default()
-                .borders(Borders::ALL)
-                .title("Enter Google AI API token"),
-            )
-            .alignment(Alignment::Left);
+          if !app.is_token_set {
+            let input = Paragraph::new(app.token.as_ref() as &str)
+              .style(match app.input_mode {
+                InputMode::Normal => Style::default(),
+                InputMode::Editing => Style::default().fg(Color::Yellow),
+                InputMode::SelectingFiles => Style::default().fg(Color::Cyan),
+              })
+              .block(
+                Block::default()
+                  .borders(Borders::ALL)
+                  .title("Enter Google AI API token"),
+              )
+              .alignment(Alignment::Left);
 
-          f.render_widget(input, area);
-        } else if app.ask_select_files {
-          let question = Paragraph::new("Do you want to select the files to commit? (y/n)")
-            .style(Style::default().fg(Color::White))
-            .block(Block::default().borders(Borders::ALL).title("Select Files"))
-            .alignment(Alignment::Left)
-            .wrap(Wrap { trim: true });
+            f.render_widget(input, area);
+          } else if app.ask_select_files {
+            let question = Paragraph::new("Do you want to select the files to commit? (y/n)")
+              .style(Style::default().fg(Color::White))
+              .block(Block::default().borders(Borders::ALL).title("Select Files"))
+              .alignment(Alignment::Left)
+              .wrap(Wrap { trim: true });
 
-          f.render_widget(question, area);
-        } else if app.input_mode == InputMode::SelectingFiles {
-          show_file_selector(f, &app.staged_files, 0);
-        }
-      })?;
+            f.render_widget(question, area);
+          } else if app.input_mode == InputMode::SelectingFiles {
+            show_file_selector(f, &app.staged_files, 0);
+          }
+        })
+        .with_context(|| "Failed to draw input screen")?;
 
       match events.next() {
         Ok(Event::Input(key_event)) => {
@@ -269,7 +285,7 @@ pub fn run_ui(initial_setup: bool) -> Result<(), io::Error> {
                 app.token.pop();
               }
               KeyCode::Enter => {
-                save_token(&app.token)?;
+                save_token(&app.token).with_context(|| "Failed to save token")?;
                 app.is_token_set = true;
                 app.input_mode = InputMode::Normal;
                 app.ask_select_files = true;
@@ -284,10 +300,10 @@ pub fn run_ui(initial_setup: bool) -> Result<(), io::Error> {
               KeyCode::Char('y') => {
                 app.input_mode = InputMode::SelectingFiles;
                 app.ask_select_files = false;
-                app.staged_files = get_git_status_files().unwrap_or_else(|_| vec![]);
-              }
-              KeyCode::Char('n') => {
-                app.ask_select_files = false;
+                app.staged_files = get_git_status_files().unwrap_or_else(|e| {
+                  eprintln!("Failed to get git status: {}", e);
+                  vec![]
+                });
               }
               _ => {}
             }
@@ -311,24 +327,29 @@ pub fn run_ui(initial_setup: bool) -> Result<(), io::Error> {
     }
   } else {
     app.is_token_set = true;
-    app.staged_files = get_git_status_files().unwrap_or_else(|_| vec![]);
+    app.staged_files = get_git_status_files().unwrap_or_else(|e| {
+      eprintln!("Failed to get git status: {}", e);
+      vec![]
+    });
     app.input_mode = InputMode::SelectingFiles;
     let mut selected_index = 0;
 
     loop {
-      terminal.draw(|f| {
-        let size = f.area();
-        let _chunks = Layout::default()
-          .direction(Direction::Horizontal)
-          .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
-          .split(size);
+      terminal
+        .draw(|f| {
+          let size = f.area();
+          let _chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
+            .split(size);
 
-        show_file_selector(f, &app.staged_files, selected_index);
+          show_file_selector(f, &app.staged_files, selected_index);
 
-        if let Some(selected_file) = &app.selected_file {
-          show_file_diff(f, &app.file_diff);
-        }
-      })?;
+          if let Some(_selected_file) = &app.selected_file {
+            show_file_diff(f, &app.file_diff);
+          }
+        })
+        .with_context(|| "Failed to draw file selector screen")?;
 
       match events.next() {
         Ok(Event::Input(key_event)) => {
@@ -370,9 +391,12 @@ pub fn run_ui(initial_setup: bool) -> Result<(), io::Error> {
     }
   }
 
-  disable_raw_mode()?;
-  execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-  terminal.show_cursor()?;
+  disable_raw_mode().with_context(|| "Failed to disable raw mode")?;
+  execute!(terminal.backend_mut(), LeaveAlternateScreen)
+    .with_context(|| "Failed to leave alternate screen")?;
+  terminal
+    .show_cursor()
+    .with_context(|| "Failed to show cursor")?;
 
   Ok(())
 }
