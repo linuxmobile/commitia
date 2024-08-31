@@ -30,6 +30,7 @@ pub fn draw_file_selection(f: &mut Frame, app: &App) {
       main_chunks[0],
       &app.staged_files,
       app.selected_index,
+      &app.selected_files,
       app.active_column == ActiveColumn::Sidebar,
     );
   }
@@ -46,8 +47,9 @@ pub fn draw_file_selection(f: &mut Frame, app: &App) {
     }
   }
 
-  let hint = Paragraph::new("Tab: Switch columns | q: Quit")
-    .style(Style::default().fg(Color::Gray))
-    .alignment(ratatui::layout::Alignment::Center);
+  let hint =
+    Paragraph::new("Tab: Switch columns | Space: Select file | s: Stage selected | q: Quit")
+      .style(Style::default().fg(Color::Gray))
+      .alignment(ratatui::layout::Alignment::Center);
   f.render_widget(hint, chunks[1]);
 }

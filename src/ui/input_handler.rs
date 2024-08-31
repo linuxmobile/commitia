@@ -18,6 +18,12 @@ fn handle_selecting_files(app: &mut App, key_code: KeyCode, modifiers: KeyModifi
     KeyCode::Tab => {
       app.toggle_active_column();
     }
+    KeyCode::Char(' ') => {
+      app.toggle_file_selection();
+    }
+    KeyCode::Char('s') => {
+      app.stage_selected_files();
+    }
     KeyCode::Enter => {}
     KeyCode::Esc | KeyCode::Char('c') if modifiers.contains(KeyModifiers::CONTROL) => {
       return true;

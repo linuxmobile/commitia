@@ -2,6 +2,7 @@ use asyncgit::sync::status::StatusItemType;
 use ratatui::{
   layout::Rect,
   style::{Color, Style},
+  text::Span,
   widgets::{Block, Borders, List, ListItem},
   Frame,
 };
@@ -12,8 +13,9 @@ impl FileSelector {
   pub fn render(
     f: &mut Frame,
     area: Rect,
-    files: &[(String, StatusItemType)],
+    files: &[(Box<str>, StatusItemType)],
     selected_index: usize,
+    selected_files: &[usize],
     is_active: bool,
   ) {
     let items: Vec<ListItem> = files
@@ -33,7 +35,13 @@ impl FileSelector {
           StatusItemType::Typechange => " T ",
           _ => "   ",
         };
-        ListItem::new(format!("{} {}", status_str, path)).style(style)
+        let checkbox = if selected_files.contains(&i) {
+          "[x] "
+        } else {
+          "[ ] "
+        };
+        let content = Span::styled(format!("{}{}{}", checkbox, status_str, path), style);
+        ListItem::new(content)
       })
       .collect();
 

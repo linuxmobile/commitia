@@ -89,10 +89,15 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
   }
 
   app.is_token_set = true;
-  app.staged_files = get_git_status_files().unwrap_or_else(|e| {
-    eprintln!("Failed to get git status: {}", e);
-    vec![]
-  });
+  app.staged_files = get_git_status_files()
+    .unwrap_or_else(|e| {
+      eprintln!("Failed to get git status: {}", e);
+      vec![]
+    })
+    .into_iter()
+    .map(|(s, status)| (s.into_boxed_str(), status))
+    .collect();
+
   app.input_mode = InputMode::SelectingFiles;
   app.select_first_file();
 
