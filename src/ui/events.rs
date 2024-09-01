@@ -1,6 +1,6 @@
+use async_std::channel::{self, Receiver};
+use async_std::task;
 use crossterm::event::{self, Event as CEvent, KeyEvent};
-use std::sync::mpsc;
-use std::thread;
 use std::time::{Duration, Instant};
 
 pub enum Event<I> {
@@ -9,14 +9,14 @@ pub enum Event<I> {
 }
 
 pub struct Events {
-  rx: mpsc::Receiver<Event<KeyEvent>>,
+  rx: Receiver<Event<KeyEvent>>,
 }
 
 impl Events {
   pub fn new(tick_rate: Duration) -> Self {
-    let (tx, rx) = mpsc::channel();
+    let (tx, rx) = channel::bounded(100);
 
-    thread::spawn(move || {
+    task::spawn(async move {
       let mut last_tick = Instant::now();
       loop {
         let timeout = tick_rate
@@ -25,25 +25,27 @@ impl Events {
 
         if event::poll(timeout).unwrap() {
           if let CEvent::Key(key) = event::read().unwrap() {
-            if tx.send(Event::Input(key)).is_err() {
-              return;
+            if tx.send(Event::Input(key)).await.is_err() {
+              break;
             }
           }
         }
 
         if last_tick.elapsed() >= tick_rate {
-          if tx.send(Event::Tick).is_err() {
-            return;
+          if tx.send(Event::Tick).await.is_err() {
+            break;
           }
           last_tick = Instant::now();
         }
+
+        async_std::task::sleep(Duration::from_millis(1)).await;
       }
     });
 
     Events { rx }
   }
 
-  pub fn next(&self) -> Result<Event<KeyEvent>, mpsc::RecvError> {
-    self.rx.recv()
+  pub async fn next(&mut self) -> Option<Event<KeyEvent>> {
+    self.rx.recv().await.ok()
   }
 }

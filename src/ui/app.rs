@@ -1,3 +1,4 @@
+use crate::ai::CommitContext;
 use asyncgit::sync::diff::DiffLineType;
 use asyncgit::sync::status::StatusItemType;
 
@@ -17,12 +18,14 @@ pub enum ActiveColumn {
 pub struct App {
   pub active_column: ActiveColumn,
   pub ask_select_files: bool,
+  pub commit_context: Option<CommitContext>,
+  pub commit_message: Option<String>,
   pub diff_scroll: usize,
   pub file_diff: Vec<(DiffLineType, String)>,
   pub input_mode: InputMode,
   pub is_token_set: bool,
-  pub selected_files: Vec<usize>,
   pub selected_file: Option<usize>,
+  pub selected_files: Vec<usize>,
   pub selected_index: usize,
   pub staged_files: Vec<(Box<str>, StatusItemType)>,
   pub token: String,
@@ -33,12 +36,14 @@ impl App {
     App {
       active_column: ActiveColumn::Sidebar,
       ask_select_files: false,
+      commit_context: None,
+      commit_message: None,
       diff_scroll: 0,
       file_diff: Vec::new(),
       input_mode: InputMode::Normal,
       is_token_set: false,
-      selected_files: Vec::new(),
       selected_file: None,
+      selected_files: Vec::new(),
       selected_index: 0,
       staged_files: Vec::new(),
       token: String::new(),
@@ -87,5 +92,37 @@ impl App {
     // This is where we'll implement the staging logic later
     // For now, let's just clear the selection
     self.selected_files.clear();
+  }
+
+  pub fn prepare_commit_context(&mut self) -> anyhow::Result<()> {
+    let repo_name = crate::git::get_repo_name()?;
+    let selected_files: Vec<(String, String)> = self
+      .selected_files
+      .iter()
+      .filter_map(|&index| {
+        self.staged_files.get(index).map(|(path, _)| {
+          let diff = crate::git::get_file_diff(path).unwrap_or_default();
+          let diff_str = diff
+            .into_iter()
+            .map(|(_, line)| line)
+            .collect::<Vec<_>>()
+            .join("\n");
+          (path.to_string(), diff_str)
+        })
+      })
+      .collect();
+
+    self.commit_context = Some(crate::ai::prepare_commit_context(
+      &repo_name,
+      &selected_files,
+    )?);
+    Ok(())
+  }
+
+  pub async fn generate_commit_message(&mut self) -> anyhow::Result<()> {
+    if let Some(context) = self.commit_context.take() {
+      self.commit_message = Some(crate::ai::generate_commit_message(context).await?);
+    }
+    Ok(())
   }
 }

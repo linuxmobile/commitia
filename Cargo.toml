@@ -16,13 +16,14 @@ keywords = ["git", "commit", "cli", "commitizen", "conventional-commits"]
 [dependencies]
 aes = "0.8.4"
 anyhow = "1.0.86"
+async-std = { version = "1.12.0", features = ["attributes"] }
 asyncgit = "0.26.3"
 block-padding = "0.3.3"
 cbc = "0.1.2"
 clap = { version = "4.5.16", features = ["derive"] }
 crossterm = "0.28.1"
 dirs = "5.0.1"
-google-generative-ai-rs = "0.3.2"
+google-generative-ai-rs = { version = "0.3.2", features = ["beta"] }
 hex = "0.4.3"
 hex-literal = "0.4.1"
 openssl-sys = "0.9.103"

@@ -1,14 +1,5 @@
-use crate::{
-  config::save_token,
-  git::get_git_status_files,
-  ui::{
-    app::{App, InputMode},
-    events::{Event, Events},
-    input_handler::handle_input,
-    screen::{draw_file_selection, draw_setup_screen, draw_splash_screen, draw_token_input},
-  },
-};
 use anyhow::Context;
+use async_std::task;
 use crossterm::{
   event::KeyCode,
   execute,
@@ -21,7 +12,18 @@ use std::{
 };
 use webbrowser;
 
-pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
+use crate::{
+  config::save_token,
+  git::get_git_status_files,
+  ui::{
+    app::{App, InputMode},
+    events::{Event, Events},
+    input_handler::handle_input,
+    screen::{draw_file_selection, draw_setup_screen, draw_splash_screen, draw_token_input},
+  },
+};
+
+pub async fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
   enable_raw_mode().context("Failed to enable raw mode")?;
   let mut stdout = io::stdout();
   execute!(stdout, EnterAlternateScreen).context("Failed to enter alternate screen")?;
@@ -29,7 +31,7 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
   let mut terminal = Terminal::new(backend).context("Failed to create terminal")?;
 
   let mut app = App::new();
-  let events = Events::new(Duration::from_millis(200));
+  let mut events = Events::new(Duration::from_millis(200));
 
   let welcome_message = "commitia_";
   let additional_message = "This is the initial setup! 🚀\n\
@@ -40,14 +42,14 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
   while start_time.elapsed() < splash_duration {
     let progress = start_time.elapsed().as_secs_f64() / splash_duration.as_secs_f64();
     terminal.draw(|f| draw_splash_screen(f, welcome_message, progress))?;
-    std::thread::sleep(Duration::from_millis(100));
+    task::sleep(Duration::from_millis(100)).await;
   }
 
   if initial_setup {
     loop {
       terminal.draw(|f| draw_setup_screen(f, additional_message))?;
 
-      if let Ok(Event::Input(key_event)) = events.next() {
+      if let Some(Event::Input(key_event)) = events.next().await {
         match key_event.code {
           KeyCode::Char('c') => {
             if webbrowser::open("https://aistudio.google.com/app/apikey").is_ok() {
@@ -64,7 +66,7 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
     loop {
       terminal.draw(|f| draw_token_input(f, &app))?;
 
-      if let Ok(Event::Input(key_event)) = events.next() {
+      if let Some(Event::Input(key_event)) = events.next().await {
         if key_event.code == KeyCode::Char('q') || key_event.code == KeyCode::Esc {
           return Ok(());
         }
@@ -104,9 +106,21 @@ pub fn run_ui(initial_setup: bool) -> anyhow::Result<()> {
   loop {
     terminal.draw(|f| draw_file_selection(f, &app))?;
 
-    if let Ok(Event::Input(key_event)) = events.next() {
-      if handle_input(&mut app, key_event.code, key_event.modifiers) {
-        break;
+    if let Some(event) = events.next().await {
+      match event {
+        Event::Input(key_event) => {
+          if handle_input(&mut app, key_event.code, key_event.modifiers) {
+            break;
+          }
+          if key_event.code == KeyCode::Enter {
+            app.prepare_commit_context()?;
+            app.generate_commit_message().await?;
+            // Here you can add logic to display the generated commit message
+          }
+        }
+        Event::Tick => {
+          // Handle tick event if needed
+        }
       }
     }
   }

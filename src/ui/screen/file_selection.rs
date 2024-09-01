@@ -49,7 +49,7 @@ pub fn draw_file_selection(f: &mut Frame, app: &App) {
 
   let hint =
     Paragraph::new("Tab: Switch columns | Space: Select file | s: Stage selected | q: Quit")
-      .style(Style::default().fg(Color::Gray))
+      .style(Style::default().fg(Color::Yellow))
       .alignment(ratatui::layout::Alignment::Center);
   f.render_widget(hint, chunks[1]);
 }
